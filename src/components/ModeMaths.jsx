@@ -1,44 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react';
-import { MATH_EXERCISES_BY_LEVEL } from '../data/maths';
+import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Flame, Award } from 'lucide-react';
+import { MATH_TOPICS, generateExercise } from '../utils/mathGenerator';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
 
-// Fisher-Yates shuffle algorithm to guarantee true random position of the correct answer
-function shuffle(array) {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-  }
-  return arr;
-}
-
 export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
-  const [exerciseIndex, setExerciseIndex] = useState(0);
+  const [topicId, setTopicId] = useState('mixed');
+  const [currentEx, setCurrentEx] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [status, setStatus] = useState('idle');
-  const [shuffledOptions, setShuffledOptions] = useState([]);
+  const [status, setStatus] = useState('idle'); // 'idle' | 'success' | 'retry'
+  const [solvedCount, setSolvedCount] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
-  const exercises = MATH_EXERCISES_BY_LEVEL[difficultyLevel] || MATH_EXERCISES_BY_LEVEL[1];
-  const currentEx = exercises[exerciseIndex % exercises.length];
-
-  // Randomize answer options order on every new question or level change!
-  useEffect(() => {
+  // Function to load next procedural exercise
+  const loadNewExercise = useCallback((lvl = difficultyLevel, top = topicId) => {
     setSelectedAnswer(null);
     setStatus('idle');
-    if (currentEx && currentEx.options) {
-      setShuffledOptions(shuffle(currentEx.options));
-    }
-  }, [exerciseIndex, difficultyLevel, currentEx]);
+    const newEx = generateExercise(lvl, top);
+    setCurrentEx(newEx);
+  }, [difficultyLevel, topicId]);
+
+  // Load new exercise on mount or when difficulty/topic changes
+  useEffect(() => {
+    loadNewExercise(difficultyLevel, topicId);
+  }, [difficultyLevel, topicId, loadNewExercise]);
+
+  const handleSelectTopic = (id) => {
+    soundManager.playPop();
+    setTopicId(id);
+    loadNewExercise(difficultyLevel, id);
+  };
 
   const handleAnswer = (ans) => {
-    if (status === 'success') return;
+    if (status === 'success' || !currentEx) return;
     setSelectedAnswer(ans);
 
     const isCorrect = ans === currentEx.answer;
@@ -47,10 +44,12 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
       setStatus('success');
       soundManager.playSuccess();
       onAddStar(currentLevelConfig.starsReward);
+      setSolvedCount(prev => prev + 1);
+      setStreak(prev => prev + 1);
 
       confetti({
-        particleCount: 70,
-        spread: 60,
+        particleCount: 75,
+        spread: 65,
         origin: { y: 0.6 }
       });
 
@@ -58,16 +57,18 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
     } else {
       setStatus('retry');
       soundManager.playTryAgain();
-      soundManager.speak("Ce n'est pas tout à fait ça, recompte bien et réessaie !");
+      setStreak(0);
+      soundManager.speak("Ce n'est pas la bonne réponse, recompte bien et réessaie !");
     }
   };
 
   const handleNext = () => {
     soundManager.playPop();
-    setExerciseIndex(prev => (prev + 1) % exercises.length);
+    loadNewExercise();
   };
 
   const speakQuestion = () => {
+    if (!currentEx) return;
     soundManager.playPop();
     if (currentEx.story) {
       soundManager.speak(currentEx.story);
@@ -78,30 +79,64 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
     }
   };
 
+  if (!currentEx) return null;
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+      {/* Topics switcher (Responsive horizontal wrap with badges) */}
+      <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-3 w-full px-1">
+        {MATH_TOPICS.map((top) => {
+          const isSelected = topicId === top.id;
+          return (
+            <button
+              key={top.id}
+              onClick={() => handleSelectTopic(top.id)}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+                isSelected
+                  ? `bg-gradient-to-r ${theme?.primaryBtn || 'from-sky-500 to-blue-600'} text-white shadow-md scale-105 ring-2 ring-white`
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+              }`}
+            >
+              <span>{top.emoji}</span>
+              <span>{top.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Exercise Card */}
       <div className={`w-full bg-white rounded-3xl p-4 sm:p-7 shadow-xl border-4 ${theme?.cardBorder || 'border-amber-200'} flex flex-col items-center relative overflow-hidden`}>
-        {/* Banner with Level Badge */}
+        {/* Banner with Level Badge and Streak Counter */}
         <div className="flex items-center justify-between w-full border-b pb-3 mb-4 border-slate-100 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="text-2xl sm:text-3xl">🧮</span>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-xl font-black text-slate-800">
-                  L'Atelier des Maths
+                  L'Atelier des Maths (Génération Infinie)
                 </h2>
                 <span className={`text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full ${currentLevelConfig.badgeBg}`}>
                   {currentLevelConfig.emoji} {currentLevelConfig.name}
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-semibold">
-                Dénombrement, additions, soustractions et petits problèmes
+                Exercices uniques générés à l'infini avec Lilou et Tiago
               </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-slate-500">
-            Exercice {(exerciseIndex % exercises.length) + 1} / {exercises.length}
-          </span>
+
+          {/* Solved stats */}
+          <div className="flex items-center gap-2">
+            {streak >= 3 && (
+              <span className="flex items-center gap-1 text-xs font-black bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full border border-orange-300 animate-pulse">
+                <Flame className="w-3.5 h-3.5 text-orange-600" />
+                <span>Série de {streak} !</span>
+              </span>
+            )}
+            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
+              Réussis : {solvedCount} ⭐
+            </span>
+          </div>
         </div>
 
         {/* Listen Question Button */}
@@ -116,7 +151,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
         {/* 1. Dénombrement visuel */}
         {currentEx.type === 'count' && (
           <div className="flex flex-col items-center my-3">
-            <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-3 text-center">
+            <h3 className="text-base sm:text-xl font-black text-slate-800 mb-3 text-center">
               {currentEx.question}
             </h3>
 
@@ -141,7 +176,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
           </div>
         )}
 
-        {/* 2. Calculs (Additions & Soustractions) */}
+        {/* 2. Additions & Soustractions */}
         {currentEx.type === 'calc' && (
           <div className="flex flex-col items-center my-3">
             <div className="flex items-center gap-2 sm:gap-4 bg-emerald-50 border-2 border-emerald-200 rounded-3xl p-4 sm:p-6 shadow-inner flex-wrap justify-center">
@@ -149,7 +184,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
               <div className="flex flex-col items-center">
                 {currentEx.a <= 10 && (
                   <div className="flex gap-1 flex-wrap justify-center max-w-[120px]">
-                    {Array.from({ length: Math.min(10, currentEx.a) }).map((_, i) => (
+                    {Array.from({ length: currentEx.a }).map((_, i) => (
                       <span key={i} className="text-xl sm:text-2xl">{currentEx.item}</span>
                     ))}
                   </div>
@@ -165,7 +200,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
               <div className="flex flex-col items-center">
                 {currentEx.b <= 10 && (
                   <div className="flex gap-1 flex-wrap justify-center max-w-[120px]">
-                    {Array.from({ length: Math.min(10, currentEx.b) }).map((_, i) => (
+                    {Array.from({ length: currentEx.b }).map((_, i) => (
                       <span key={i} className="text-xl sm:text-2xl">{currentEx.item}</span>
                     ))}
                   </div>
@@ -202,6 +237,9 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
                 {currentEx.b}
               </span>
             </div>
+            <p className="text-xs text-slate-500 font-semibold mt-2">
+              Rappel : la pointe s'oriente vers le plus petit nombre !
+            </p>
           </div>
         )}
 
@@ -210,40 +248,75 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
           <div className="flex flex-col items-center my-3">
             <div className="text-center bg-purple-50 border-2 border-purple-200 rounded-3xl p-5 shadow-inner max-w-md">
               <span className="text-3xl mb-1 block">✨</span>
-              <h3 className="text-lg sm:text-xl font-black text-purple-950 mb-1">
+              <h3 className="text-lg sm:text-2xl font-black text-purple-950 mb-1">
                 {currentEx.question}
               </h3>
-              <p className="text-xs font-semibold text-purple-700">
+              <p className="text-xs sm:text-sm font-semibold text-purple-700">
                 💡 Indice : {currentEx.hint}
               </p>
             </div>
           </div>
         )}
 
-        {/* 5. Petits Problèmes illustrés */}
-        {currentEx.type === 'problem' && (
+        {/* 5. Compléments */}
+        {currentEx.type === 'complement' && (
           <div className="flex flex-col items-center my-3">
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-6 shadow-inner max-w-lg text-center">
-              <span className="text-3xl mb-2 block">{currentEx.emoji}</span>
-              <p className="text-sm sm:text-base font-bold text-slate-800 leading-relaxed">
-                {currentEx.story}
+            <div className="text-center bg-sky-50 border-2 border-sky-300 rounded-3xl p-5 shadow-inner max-w-md">
+              <span className="text-3xl mb-1 block">🎯</span>
+              <h3 className="text-lg sm:text-2xl font-black text-sky-950 mb-1">
+                {currentEx.question}
+              </h3>
+              <p className="text-xs font-semibold text-sky-700">
+                💡 Indice : {currentEx.hint}
               </p>
             </div>
           </div>
         )}
 
+        {/* 6. Suites logiques */}
+        {currentEx.type === 'sequence' && (
+          <div className="flex flex-col items-center my-3">
+            <div className="text-center bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 shadow-inner max-w-md">
+              <span className="text-3xl mb-1 block">📈</span>
+              <h3 className="text-lg sm:text-2xl font-black text-amber-950 mb-2">
+                {currentEx.question}
+              </h3>
+              <p className="text-xs font-semibold text-amber-700">
+                💡 Indice : {currentEx.hint}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 7. Problèmes du Quotidien avec Lilou & Tiago */}
+        {currentEx.type === 'problem' && (
+          <div className="flex flex-col items-center my-3">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-6 shadow-inner max-w-lg text-center">
+              <span className="text-3xl mb-2 block">{currentEx.emoji}</span>
+              <p className="text-sm sm:text-base font-bold text-slate-800 leading-relaxed mb-2">
+                {currentEx.story}
+              </p>
+              {currentEx.calc && (
+                <div className="bg-white px-3 py-1 rounded-xl border border-amber-300 text-xs font-bold text-amber-800 inline-block">
+                  Opération : {currentEx.calc} = ?
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Clickable Shuffled Answer Options (True Random Order!) */}
-        <div className="flex flex-col items-center my-2">
+        <div className="flex flex-col items-center my-3">
           <p className="text-xs sm:text-sm font-bold text-slate-600 mb-2">
             Choisis la bonne réponse :
           </p>
 
           <div className="flex flex-wrap justify-center gap-2.5 sm:gap-4">
-            {shuffledOptions.map((opt, i) => {
+            {currentEx.options.map((opt, i) => {
               const isSelected = selectedAnswer === opt;
               return (
                 <button
-                  key={i}
+                  key={`${currentEx.id}-${i}-${opt}`}
                   onClick={() => handleAnswer(opt)}
                   className={`w-14 h-14 sm:w-18 sm:h-18 rounded-2xl font-black text-xl sm:text-3xl tile-shadow cursor-pointer transition-all active:translate-y-1 flex items-center justify-center border-3 ${
                     isSelected
@@ -271,9 +344,21 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
               <ArrowRight className="w-5 h-5" />
             </button>
             <span className="text-emerald-700 font-bold text-xs sm:text-sm">
-              Super champion ! +{currentLevelConfig.starsReward} Étoiles gagnées ! ⭐
+              Super calcul ! +{currentLevelConfig.starsReward} Étoiles gagnées ! ⭐
             </span>
           </div>
+        )}
+
+        {/* Reset / Reload Button */}
+        {status !== 'success' && (
+          <button
+            onClick={() => loadNewExercise()}
+            title="Générer un autre exercice"
+            className="mt-2 text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Changer d'exercice</span>
+          </button>
         )}
       </div>
     </div>
