@@ -8,16 +8,50 @@ import {
   Lightbulb, 
   Keyboard as KeyboardIcon,
   Play,
-  SmilePlus
+  SmilePlus,
+  Trophy,
+  Target
 } from 'lucide-react';
 import { checkWord, cleanWord } from '../data/dictionary';
+import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
 
-export default function ModeFreeWriting({ uppercase, onAddStar }) {
+const LEVEL_CHALLENGES = {
+  1: {
+    title: "Mission Débutant",
+    targetWords: 3,
+    description: "Écris au moins 3 mots simples bien orthographiés (ex: le chat dort)"
+  },
+  2: {
+    title: "Mission Phrase Complète",
+    targetWords: 5,
+    description: "Écris une jolie phrase complète d'au moins 5 mots avec une majuscule et un point !"
+  },
+  3: {
+    title: "Mission Détective des Mots",
+    targetWords: 8,
+    description: "Écris une phrase avec un animal et une couleur (au moins 8 mots sans faute)"
+  },
+  4: {
+    title: "Mission Mini-Écrivain",
+    targetWords: 12,
+    description: "Raconte une petite aventure en 2 phrases (au moins 12 mots bien écrits)"
+  },
+  5: {
+    title: "Grand Défi du Maître",
+    targetWords: 16,
+    description: "Écris une histoire d'au moins 16 mots parfaits sans aucune erreur !"
+  }
+};
+
+export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel = 1 }) {
   const [text, setText] = useState('Le chat joue avec le ballon.');
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+
+  const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
+  const challenge = LEVEL_CHALLENGES[difficultyLevel] || LEVEL_CHALLENGES[1];
 
   // Quick stickers to inspire children's creative sentences
   const quickStickers = [
@@ -60,24 +94,34 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
       }
     });
 
-    setAnalysis({ results, validCount, mistakeCount });
-    return { results, validCount, mistakeCount };
+    const isChallengeMet = validCount >= challenge.targetWords && mistakeCount === 0;
+
+    setAnalysis({ results, validCount, mistakeCount, isChallengeMet });
+    return { results, validCount, mistakeCount, isChallengeMet };
   };
 
-  // Run analysis when user asks to check
   const handleVerify = () => {
     soundManager.playPop();
     const res = analyzeText();
 
-    if (res.validCount > 0 && res.mistakeCount === 0) {
+    if (res.isChallengeMet) {
       soundManager.playSuccess();
-      onAddStar();
+      onAddStar(currentLevelConfig.starsReward + 2); // Bonus for mission accomplished
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      soundManager.speak(`Incroyable ! Tu as réussi la ${challenge.title} ! +${currentLevelConfig.starsReward + 2} étoiles !`);
+    } else if (res.validCount > 0 && res.mistakeCount === 0) {
+      soundManager.playSuccess();
+      onAddStar(currentLevelConfig.starsReward);
       confetti({
         particleCount: 50,
         spread: 60,
         origin: { y: 0.6 }
       });
-      soundManager.speak("Formidable ! Tous les mots sont bien écrits !");
+      soundManager.speak("Bravo ! Tous tes mots sont bien écrits !");
     } else if (res.mistakeCount > 0) {
       soundManager.playTryAgain();
       soundManager.speak("Bravo pour ton texte ! Regarde les mots soulignés pour voir les suggestions.");
@@ -86,7 +130,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
     }
   };
 
-  // Text-To-Speech: Read full story
   const handleSpeakFull = () => {
     if (!text.trim()) {
       soundManager.speak("Ton ardoise est vide ! Écris quelque chose d'abord.");
@@ -96,17 +139,14 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
     soundManager.speak(text, { rate: 0.85 });
   };
 
-  // Replace a misspelled word with the suggestion
   const handleApplySuggestion = (rawToken, suggestion) => {
     if (!suggestion) return;
     soundManager.playTile();
-    // Replace word in text
     const regex = new RegExp(`\\b${rawToken}\\b`, 'i');
     const newText = text.replace(regex, uppercase ? suggestion.toUpperCase() : suggestion.toLowerCase());
     setText(newText);
     soundManager.speak(`Remplacé par ${suggestion}`);
     setTimeout(() => {
-      // Re-evaluate
       const rawTokens = newText.split(/(\s+)/);
       const results = [];
       let validCount = 0;
@@ -127,7 +167,8 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
           }
         }
       });
-      setAnalysis({ results, validCount, mistakeCount });
+      const isChallengeMet = validCount >= challenge.targetWords && mistakeCount === 0;
+      setAnalysis({ results, validCount, mistakeCount, isChallengeMet });
     }, 50);
   };
 
@@ -144,6 +185,33 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+      {/* Current Level Mission Box */}
+      <div className="w-full bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-200 border-2 border-amber-300 rounded-2xl p-3 sm:p-4 mb-4 flex items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center text-xl shadow-inner shrink-0">
+            🎯
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-xs sm:text-sm text-amber-950 uppercase tracking-wide">
+                {challenge.title}
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${currentLevelConfig.badgeBg}`}>
+                Niveau {currentLevelConfig.name}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm font-semibold text-amber-800">
+              {challenge.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="hidden sm:flex flex-col items-end shrink-0">
+          <span className="text-[11px] font-bold text-amber-700">Récompense</span>
+          <span className="text-sm font-black text-amber-950">+{currentLevelConfig.starsReward + 2} ⭐</span>
+        </div>
+      </div>
+
       {/* Inspiration stickers */}
       <div className="w-full bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 mb-4 flex flex-wrap items-center justify-between gap-2 shadow-sm">
         <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-800">
@@ -186,7 +254,7 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
               setText(e.target.value);
               setAnalysis(null);
             }}
-            placeholder={formatText("Écris ce que tu veux ici... Par exemple : Le petit chat mange une pomme.")}
+            placeholder={formatText("Écris ce que tu veux ici...")}
             rows={5}
             className="w-full bg-transparent text-xl sm:text-2xl font-bold text-slate-800 leading-[2.5rem] resize-none focus:outline-none border-none tracking-wide"
           />
@@ -195,7 +263,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Speak TTS Button */}
             <button
               onClick={handleSpeakFull}
               className="btn-3d flex items-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold px-4 py-2.5 rounded-2xl text-sm sm:text-base cursor-pointer shadow-md"
@@ -204,7 +271,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
               <span>Lire à voix haute</span>
             </button>
 
-            {/* Spell Check Button */}
             <button
               onClick={handleVerify}
               className="btn-3d flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold px-5 py-2.5 rounded-2xl text-sm sm:text-base cursor-pointer shadow-md"
@@ -215,7 +281,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Reset */}
             <button
               onClick={() => {
                 soundManager.playPop();
@@ -228,7 +293,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
               <RotateCcw className="w-5 h-5" />
             </button>
 
-            {/* Keyboard toggle */}
             <button
               onClick={() => {
                 soundManager.playPop();
@@ -259,6 +323,14 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
                 {analysis.mistakeCount > 0 && ` • ${analysis.mistakeCount} à vérifier`}
               </span>
             </div>
+
+            {/* Mission banner */}
+            {analysis.isChallengeMet && (
+              <div className="bg-amber-100 border-2 border-amber-400 text-amber-950 p-2.5 rounded-xl font-black text-sm flex items-center gap-2 animate-bounce-gentle">
+                <Trophy className="w-6 h-6 text-amber-600 shrink-0" />
+                <span>🏆 Félicitations ! Tu as accompli la {challenge.title} ! Bonus +{currentLevelConfig.starsReward + 2} ⭐ !</span>
+              </div>
+            )}
 
             {/* Visual Word Badges */}
             <div className="flex flex-wrap items-center gap-1.5 p-3 bg-white rounded-xl border border-slate-200 text-lg sm:text-xl font-bold">
@@ -292,7 +364,7 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
               })}
             </div>
 
-            {/* Suggestions list if any mistakes */}
+            {/* Suggestions list */}
             {analysis.mistakeCount > 0 && (
               <div className="flex flex-col gap-1.5 mt-1">
                 <span className="text-xs sm:text-sm font-bold text-amber-800 flex items-center gap-1">
@@ -320,7 +392,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar }) {
         )}
       </div>
 
-      {/* On-screen virtual keyboard if requested */}
       {showKeyboard && (
         <VirtualKeyboard
           onKeyPress={(char) => setText(prev => prev + char)}

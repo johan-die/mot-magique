@@ -8,51 +8,65 @@ import {
   RotateCcw, 
   Keyboard as KeyboardIcon,
   Sparkles,
+  Eye,
   HelpCircle
 } from 'lucide-react';
-import { WORDS, WORD_CATEGORIES } from '../data/words';
+import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
 
-export default function ModeGuess({ uppercase, onAddStar }) {
+export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 }) {
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [wordIndex, setWordIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle' | 'success' | 'retry'
   const [hintLevel, setHintLevel] = useState(0); // 0: none, 1: first letter, 2: text hint
   const [showKeyboard, setShowKeyboard] = useState(true);
+  const [imageRevealed, setImageRevealed] = useState(false);
   const inputRef = useRef(null);
 
-  // Filter words by selected category
-  const filteredWords = selectedCategory === 'tous' 
-    ? WORDS 
-    : WORDS.filter(w => w.category === selectedCategory);
+  const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
-  const currentWordObj = filteredWords[wordIndex] || filteredWords[0];
+  // Filter words by difficulty level AND category
+  const filteredWords = WORDS.filter(w => {
+    const matchesLevel = w.level === difficultyLevel;
+    const matchesCat = selectedCategory === 'tous' || w.category === selectedCategory;
+    return matchesLevel && matchesCat;
+  });
+
+  // Fallback to words of this level if category empty
+  const activeWords = filteredWords.length > 0 
+    ? filteredWords 
+    : WORDS.filter(w => w.level === difficultyLevel);
+
+  const currentWordObj = activeWords[wordIndex % activeWords.length] || activeWords[0];
   const targetWord = currentWordObj ? currentWordObj.word.toLowerCase() : '';
 
-  // Reset state when changing word
+  // Reset when word or level changes
   useEffect(() => {
     setUserInput('');
     setStatus('idle');
     setHintLevel(0);
+    // In Level 5 (Maître), image starts hidden for Dictation Mode!
+    setImageRevealed(difficultyLevel < 5);
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [wordIndex, selectedCategory]);
+  }, [wordIndex, selectedCategory, difficultyLevel]);
 
-  // Clean word for comparison (removes accents for kids if needed, though we teach correct spelling)
-  const normalize = (str) => {
-    return str
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+  const normalize = (str, strictAccents = false) => {
+    const trimmed = str.trim().toLowerCase();
+    if (strictAccents) return trimmed;
+    return trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   };
 
   const handleListen = () => {
     soundManager.playPop();
-    soundManager.speak(currentWordObj.word, { rate: 0.8 });
+    if (difficultyLevel === 5) {
+      soundManager.speak(`Écoute bien pour la dictée : ${currentWordObj.word}`, { rate: 0.8 });
+    } else {
+      soundManager.speak(currentWordObj.word, { rate: 0.8 });
+    }
   };
 
   const handleHint = () => {
@@ -68,8 +82,10 @@ export default function ModeGuess({ uppercase, onAddStar }) {
   };
 
   const handleValidate = () => {
-    const cleanUser = normalize(userInput);
-    const cleanTarget = normalize(targetWord);
+    // In level 4 and 5 (Expert and Maître), accents matter!
+    const isStrict = difficultyLevel >= 4;
+    const cleanUser = normalize(userInput, isStrict);
+    const cleanTarget = normalize(targetWord, isStrict);
 
     if (!cleanUser) {
       soundManager.speak("Écris quelque chose dans la boîte !");
@@ -79,25 +95,24 @@ export default function ModeGuess({ uppercase, onAddStar }) {
     if (cleanUser === cleanTarget) {
       // SUCCESS !
       setStatus('success');
+      setImageRevealed(true);
       soundManager.playSuccess();
-      onAddStar();
+      onAddStar(currentLevelConfig.starsReward);
 
-      // Confetti burst
       confetti({
-        particleCount: 70,
-        spread: 60,
+        particleCount: 60 + difficultyLevel * 15,
+        spread: 70,
         origin: { y: 0.65 }
       });
 
-      // TTS Congratulations
-      soundManager.speak(`Bravo ! C'est bien : ${currentWordObj.word} !`, {
+      soundManager.speak(`Bravo ! C'est bien : ${currentWordObj.word} ! +${currentLevelConfig.starsReward} étoiles !`, {
         rate: 0.85
       });
     } else {
       // RETRY
       setStatus('retry');
       soundManager.playTryAgain();
-      soundManager.speak("Presque ! Regarde bien l'image et réessaie !", {
+      soundManager.speak("Presque ! Écoute bien et réessaie !", {
         rate: 0.85
       });
     }
@@ -105,19 +120,7 @@ export default function ModeGuess({ uppercase, onAddStar }) {
 
   const handleNextWord = () => {
     soundManager.playPop();
-    setWordIndex((prev) => (prev + 1) % filteredWords.length);
-  };
-
-  const handleKeyFromVirtual = (char) => {
-    setUserInput((prev) => prev + char);
-  };
-
-  const handleBackspaceFromVirtual = () => {
-    setUserInput((prev) => prev.slice(0, -1));
-  };
-
-  const handleSpaceFromVirtual = () => {
-    setUserInput((prev) => prev + ' ');
+    setWordIndex((prev) => (prev + 1) % activeWords.length);
   };
 
   const formatText = (txt) => {
@@ -126,8 +129,8 @@ export default function ModeGuess({ uppercase, onAddStar }) {
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-      {/* Category selection chips */}
-      <div className="flex flex-wrap justify-center gap-2 mb-4 w-full px-2">
+      {/* Category filters */}
+      <div className="flex flex-wrap justify-center gap-2 mb-3 w-full px-2">
         {WORD_CATEGORIES.map((cat) => (
           <button
             key={cat.id}
@@ -148,36 +151,90 @@ export default function ModeGuess({ uppercase, onAddStar }) {
         ))}
       </div>
 
-      {/* Main Game Card */}
+      {/* Main Card */}
       <div className="w-full bg-white rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-sky-200 flex flex-col items-center relative overflow-hidden">
         {/* Level badge */}
-        <div className="absolute top-4 left-4 bg-sky-100 text-sky-800 text-xs sm:text-sm font-bold px-3 py-1 rounded-full border border-sky-300">
-          Niveau {currentWordObj.level} • {currentWordObj.word.length} lettres
+        <div className={`absolute top-4 left-4 ${currentLevelConfig.badgeBg} text-xs sm:text-sm font-extrabold px-3 py-1 rounded-full border flex items-center gap-1.5`}>
+          <span>{currentLevelConfig.emoji}</span>
+          <span>{currentLevelConfig.name}</span>
+          <span className="opacity-75">({currentWordObj.word.length} lettres)</span>
         </div>
 
-        {/* Word index counter */}
+        {/* Counter */}
         <div className="absolute top-4 right-4 text-slate-500 text-xs sm:text-sm font-semibold">
-          Mot {wordIndex + 1} / {filteredWords.length}
+          Mot {(wordIndex % activeWords.length) + 1} / {activeWords.length}
         </div>
 
-        {/* Large visual illustration */}
+        {/* Level 5 Dictation Banner */}
+        {difficultyLevel === 5 && !imageRevealed && (
+          <div className="mt-8 bg-purple-50 border border-purple-300 text-purple-900 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-2">
+            <span>🎧</span>
+            <span>Mode Dictée du Maître : écoute le mot et écris-le sans voir l'image !</span>
+          </div>
+        )}
+
+        {/* Image / Illustration / Mystery card */}
         <div 
-          className="mt-6 mb-4 w-36 h-36 sm:w-48 sm:h-48 rounded-3xl flex items-center justify-center text-7xl sm:text-9xl shadow-inner border-4 border-dashed border-sky-300 transform transition-transform hover:scale-105"
+          className="mt-5 mb-4 w-36 h-36 sm:w-44 sm:h-44 rounded-3xl flex items-center justify-center text-7xl sm:text-8xl shadow-inner border-4 border-dashed border-sky-300 relative transition-transform hover:scale-105"
           style={{ backgroundColor: currentWordObj.color || '#f0f9ff' }}
         >
-          <span className="filter drop-shadow-md select-none">{currentWordObj.emoji}</span>
+          {imageRevealed ? (
+            <span className="filter drop-shadow-md select-none animate-pop">
+              {currentWordObj.emoji}
+            </span>
+          ) : (
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-5xl sm:text-6xl animate-bounce-gentle">❓</span>
+              <span className="text-[11px] font-black text-purple-700 uppercase tracking-wider mt-1">
+                Image Mystère
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Listen button (TTS) */}
-        <button
-          onClick={handleListen}
-          className="btn-3d flex items-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold px-5 py-2.5 rounded-2xl text-base sm:text-lg cursor-pointer shadow-md mb-4"
-        >
-          <Volume2 className="w-6 h-6 animate-pulse" />
-          <span>Écoute le mot !</span>
-        </button>
+        {/* Action button: Listen TTS */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+          <button
+            onClick={handleListen}
+            className="btn-3d flex items-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold px-5 py-2.5 rounded-2xl text-base sm:text-lg cursor-pointer shadow-md"
+          >
+            <Volume2 className="w-6 h-6 animate-pulse" />
+            <span>{difficultyLevel === 5 ? "Écoute la dictée !" : "Écoute le mot !"}</span>
+          </button>
 
-        {/* Clue button & clue text */}
+          {/* Reveal image button for Level 5 */}
+          {difficultyLevel === 5 && !imageRevealed && (
+            <button
+              onClick={() => {
+                soundManager.playPop();
+                setImageRevealed(true);
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 px-3 py-2.5 rounded-2xl border border-purple-300 cursor-pointer"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Révéler l'image</span>
+            </button>
+          )}
+        </div>
+
+        {/* Visual Letter Count Slots (shown for levels 1 & 2, optional for 3+) */}
+        {(difficultyLevel <= 2 || hintLevel >= 1) && (
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-3">
+            {targetWord.split('').map((char, idx) => {
+              const isFirst = idx === 0 && (difficultyLevel === 1 || hintLevel >= 1);
+              return (
+                <div
+                  key={idx}
+                  className="w-7 h-9 sm:w-9 sm:h-11 border-b-4 border-sky-400 flex items-center justify-center text-lg sm:text-xl font-black text-sky-900 bg-sky-50/60 rounded-t-lg"
+                >
+                  {isFirst ? formatText(char) : ''}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Clue button */}
         <div className="flex flex-col items-center mb-4">
           {hintLevel === 0 ? (
             <button
@@ -188,7 +245,7 @@ export default function ModeGuess({ uppercase, onAddStar }) {
               <span>Besoin d'un indice ?</span>
             </button>
           ) : (
-            <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-2xl px-4 py-2 text-sm sm:text-base font-semibold flex items-center gap-2 animate-pop">
+            <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-2xl px-4 py-2 text-sm sm:text-base font-semibold flex items-center gap-2 animate-pop max-w-md text-center">
               <Lightbulb className="w-5 h-5 text-amber-500 shrink-0" />
               <span>
                 {hintLevel === 1 
@@ -201,30 +258,28 @@ export default function ModeGuess({ uppercase, onAddStar }) {
 
         {/* Input Zone */}
         <div className="w-full max-w-md flex flex-col items-center gap-3">
-          <div className="relative w-full">
-            <input
-              ref={inputRef}
-              type="text"
-              value={formatText(userInput)}
-              onChange={(e) => {
-                setUserInput(e.target.value);
-                if (status !== 'idle') setStatus('idle');
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleValidate();
-              }}
-              placeholder={formatText("Écris ici...")}
-              className={`w-full text-center text-2xl sm:text-4xl font-black py-3 sm:py-4 px-4 rounded-2xl border-4 tracking-widest focus:outline-none transition-all shadow-inner ${
-                status === 'success'
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                  : status === 'retry'
-                  ? 'border-rose-400 bg-rose-50 text-rose-800 animate-wiggle'
-                  : 'border-sky-300 bg-sky-50/50 text-sky-950 focus:border-sky-500 focus:bg-white'
-              }`}
-            />
-          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={formatText(userInput)}
+            onChange={(e) => {
+              setUserInput(e.target.value);
+              if (status !== 'idle') setStatus('idle');
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleValidate();
+            }}
+            placeholder={formatText("Écris ici...")}
+            className={`w-full text-center text-2xl sm:text-3xl font-black py-3 sm:py-4 px-4 rounded-2xl border-4 tracking-widest focus:outline-none transition-all shadow-inner ${
+              status === 'success'
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                : status === 'retry'
+                ? 'border-rose-400 bg-rose-50 text-rose-800 animate-wiggle'
+                : 'border-sky-300 bg-sky-50/50 text-sky-950 focus:border-sky-500 focus:bg-white'
+            }`}
+          />
 
-          {/* Validation and Action buttons */}
+          {/* Validation & Next Buttons */}
           <div className="flex flex-wrap justify-center items-center gap-3 w-full mt-2">
             {status !== 'success' ? (
               <button
@@ -244,7 +299,7 @@ export default function ModeGuess({ uppercase, onAddStar }) {
               </button>
             )}
 
-            {/* Clear button */}
+            {/* Clear */}
             <button
               onClick={() => {
                 soundManager.playPop();
@@ -257,7 +312,7 @@ export default function ModeGuess({ uppercase, onAddStar }) {
               <RotateCcw className="w-6 h-6" />
             </button>
 
-            {/* Toggle virtual keyboard */}
+            {/* Keyboard toggle */}
             <button
               onClick={() => {
                 soundManager.playPop();
@@ -274,28 +329,28 @@ export default function ModeGuess({ uppercase, onAddStar }) {
             </button>
           </div>
 
-          {/* Feedback message */}
+          {/* Feedback messages */}
           {status === 'success' && (
             <div className="mt-3 flex items-center gap-2 text-emerald-700 font-extrabold text-lg sm:text-xl animate-pop">
               <Sparkles className="w-6 h-6 text-yellow-500" />
-              <span>Champion ! +1 Étoile gagnée !</span>
+              <span>Bravo ! +{currentLevelConfig.starsReward} Étoiles gagnées !</span>
             </div>
           )}
 
           {status === 'retry' && (
-            <div className="mt-3 text-rose-600 font-bold text-base sm:text-lg animate-pop">
-              <span>Ne baisse pas les bras, réessaie ou écoute le mot ! 💡</span>
+            <div className="mt-3 text-rose-600 font-bold text-sm sm:text-base animate-pop text-center">
+              <span>{difficultyLevel >= 4 ? "Attention aux accents et aux lettres muettes !" : "Presque ! Écoute le mot à nouveau ! 💡"}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* On-screen tactile keyboard */}
+      {/* On-screen virtual keyboard */}
       {showKeyboard && (
         <VirtualKeyboard
-          onKeyPress={handleKeyFromVirtual}
-          onBackspace={handleBackspaceFromVirtual}
-          onSpace={handleSpaceFromVirtual}
+          onKeyPress={(char) => setUserInput(prev => prev + char)}
+          onBackspace={() => setUserInput(prev => prev.slice(0, -1))}
+          onSpace={() => setUserInput(prev => prev + ' ')}
           uppercase={uppercase}
         />
       )}

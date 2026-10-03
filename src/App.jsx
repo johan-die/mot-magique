@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
+import DifficultySelector from './components/DifficultySelector';
 import ModeGuess from './components/ModeGuess';
 import ModeFreeWriting from './components/ModeFreeWriting';
 import ModeScrabble from './components/ModeScrabble';
@@ -9,6 +10,10 @@ import { soundManager } from './utils/audio';
 
 export default function App() {
   const [activeMode, setActiveMode] = useState('guess'); // 'guess' | 'free' | 'scrabble'
+  const [difficultyLevel, setDifficultyLevel] = useState(() => {
+    const saved = localStorage.getItem('mot_magique_level');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [stars, setStars] = useState(() => {
     const saved = localStorage.getItem('mot_magique_stars');
     return saved ? parseInt(saved, 10) : 0;
@@ -18,26 +23,31 @@ export default function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [celebrationMilestone, setCelebrationMilestone] = useState(null);
 
-  // Persist stars
+  // Persist stars & difficulty level
   useEffect(() => {
     localStorage.setItem('mot_magique_stars', stars.toString());
   }, [stars]);
+
+  useEffect(() => {
+    localStorage.setItem('mot_magique_level', difficultyLevel.toString());
+  }, [difficultyLevel]);
 
   const handleAddStar = (count = 1) => {
     soundManager.playStar();
     const nextStars = stars + count;
     setStars(nextStars);
 
-    // Milestones celebrations (every 5 stars)
-    if (nextStars > 0 && nextStars % 5 === 0) {
-      setCelebrationMilestone(nextStars);
+    // Milestones celebrations (every 10 stars)
+    if (nextStars > 0 && Math.floor(nextStars / 10) > Math.floor(stars / 10)) {
+      const milestone = Math.floor(nextStars / 10) * 10;
+      setCelebrationMilestone(milestone);
       confetti({
-        particleCount: 120,
+        particleCount: 130,
         spread: 100,
         origin: { y: 0.5 }
       });
       setTimeout(() => {
-        soundManager.speak(`Super champion ! Tu as accumulé ${nextStars} étoiles brillantes !`);
+        soundManager.speak(`Super champion ! Tu as dépassé les ${milestone} étoiles brillantes !`);
       }, 500);
     }
   };
@@ -58,11 +68,19 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 flex flex-col items-center">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-4 flex flex-col items-center">
+        {/* Progressive Difficulty Selector */}
+        <DifficultySelector
+          currentLevel={difficultyLevel}
+          onSelectLevel={setDifficultyLevel}
+        />
+
+        {/* Current Game Mode */}
         {activeMode === 'guess' && (
           <ModeGuess
             uppercase={uppercase}
             onAddStar={handleAddStar}
+            difficultyLevel={difficultyLevel}
           />
         )}
 
@@ -70,6 +88,7 @@ export default function App() {
           <ModeFreeWriting
             uppercase={uppercase}
             onAddStar={handleAddStar}
+            difficultyLevel={difficultyLevel}
           />
         )}
 
@@ -77,6 +96,7 @@ export default function App() {
           <ModeScrabble
             uppercase={uppercase}
             onAddStar={handleAddStar}
+            difficultyLevel={difficultyLevel}
           />
         )}
       </main>
@@ -112,7 +132,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="w-full text-center py-4 text-xs sm:text-sm font-semibold text-amber-900/60 border-t border-amber-200/60 mt-auto">
-        Mot Magique ✨ Apprends à lire et à écrire pour les 6-7 ans (CP / CE1)
+        Mot Magique ✨ 5 Niveaux d'apprentissage : Facile 🌱 • Moyen ⭐ • Difficile 🔥 • Expert 💎 • Maître 👑
       </footer>
     </div>
   );
