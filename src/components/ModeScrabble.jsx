@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -7,10 +7,12 @@ import {
   ArrowRight, 
   RotateCcw, 
   Sparkles,
-  HelpCircle
+  Keyboard as KeyboardIcon,
+  AlertCircle
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
+import VirtualKeyboard from './VirtualKeyboard';
 
 function shuffle(array) {
   const arr = [...array];
@@ -24,6 +26,8 @@ function shuffle(array) {
 export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1 }) {
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [wordIndex, setWordIndex] = useState(0);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [rejectedNotice, setRejectedNotice] = useState(null);
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
@@ -76,10 +80,11 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
 
     setBank(shuffle(tiles));
     setStatus('idle');
+    setRejectedNotice(null);
   }, [wordIndex, selectedCategory, difficultyLevel]);
 
   // Click on bank tile -> place in first empty slot
-  const handleBankTileClick = (tile) => {
+  const handleBankTileClick = useCallback((tile) => {
     if (tile.placed || status === 'success') return;
 
     const firstEmptyIndex = slots.findIndex(s => s === null);
@@ -102,10 +107,10 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         checkSolution(newSlots);
       }, 300);
     }
-  };
+  }, [slots, bank, status]);
 
   // Click on slot tile -> return to bank
-  const handleSlotClick = (index) => {
+  const handleSlotClick = useCallback((index) => {
     if (status === 'success') return;
     const tile = slots[index];
     if (!tile) return;
@@ -120,10 +125,25 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
     setBank(newBank);
 
     if (status !== 'idle') setStatus('idle');
-  };
+  }, [slots, bank, status]);
+
+  // Remove last placed letter (Backspace / Delete)
+  const handleBackspace = useCallback(() => {
+    if (status === 'success') return;
+    let lastFilledIdx = -1;
+    for (let i = slots.length - 1; i >= 0; i--) {
+      if (slots[i] !== null) {
+        lastFilledIdx = i;
+        break;
+      }
+    }
+    if (lastFilledIdx !== -1) {
+      handleSlotClick(lastFilledIdx);
+    }
+  }, [slots, status, handleSlotClick]);
 
   // Check solution
-  const checkSolution = (currentSlots = slots) => {
+  const checkSolution = useCallback((currentSlots = slots) => {
     const constructed = currentSlots.map(s => s ? s.char.toLowerCase() : '').join('');
     const target = currentWordObj.word.toLowerCase();
 
@@ -158,7 +178,76 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
       soundManager.playTryAgain();
       soundManager.speak("Ce n'est pas le bon ordre des lettres, réessaie !");
     }
-  };
+  }, [slots, currentWordObj, difficultyLevel, currentLevelConfig, onAddStar]);
+
+  const handleNextWord = useCallback(() => {
+    soundManager.playPop();
+    setWordIndex((prev) => (prev + 1) % activeWords.length);
+  }, [activeWords.length]);
+
+  // Handle typing from physical or virtual keyboard: ONLY ACCEPTS PROPOSED LETTERS IN BANK!
+  const handleKeyInput = useCallback((char) => {
+    if (status === 'success') return;
+
+    // Check if slots are already full
+    const firstEmptyIndex = slots.findIndex(s => s === null);
+    if (firstEmptyIndex === -1) return;
+
+    const inputChar = char.toUpperCase();
+    const inputNorm = inputChar.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // 1. Search for available exact tile in bank
+    let match = bank.find(b => !b.placed && b.char === inputChar);
+
+    // 2. If not found, search for normalized tile (e.g. user typed E and bank has É, or vice-versa)
+    if (!match) {
+      match = bank.find(b => {
+        if (b.placed) return false;
+        const bNorm = b.char.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return bNorm === inputNorm;
+      });
+    }
+
+    if (match) {
+      // THE LETTER IS IN THE PROPOSED BANK -> PLACE IT!
+      setRejectedNotice(null);
+      handleBankTileClick(match);
+    } else {
+      // THE LETTER IS NOT IN THE BANK OR ALREADY USED -> REJECT IT!
+      soundManager.playTryAgain();
+      setRejectedNotice(`La lettre « ${inputChar} » n'est pas dans la réserve disponible !`);
+      setTimeout(() => {
+        setRejectedNotice(null);
+      }, 1800);
+    }
+  }, [bank, slots, status, handleBankTileClick]);
+
+  // Global physical keyboard listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't interfere if an input or textarea has focus
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        handleBackspace();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (status === 'success') {
+          handleNextWord();
+        } else {
+          checkSolution();
+        }
+      } else if (e.key.length === 1 && /[a-zA-ZÀ-ÿ]/.test(e.key)) {
+        e.preventDefault();
+        handleKeyInput(e.key);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleBackspace, handleNextWord, checkSolution, handleKeyInput, status]);
 
   // Magic wand clue
   const handleMagicHint = () => {
@@ -202,16 +291,12 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
     }
   };
 
-  const handleNextWord = () => {
-    soundManager.playPop();
-    setWordIndex((prev) => (prev + 1) % activeWords.length);
-  };
-
   const handleReset = () => {
     soundManager.playPop();
     setSlots(new Array(targetLetters.length).fill(null));
     setBank(bank.map(b => ({ ...b, placed: false })));
     setStatus('idle');
+    setRejectedNotice(null);
   };
 
   const formatChar = (c) => {
@@ -288,10 +373,27 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           </div>
         </div>
 
-        {/* Scrabble Boxes */}
-        <div className="w-full flex flex-col items-center my-4">
+        {/* Keyboard Helper Banner */}
+        <div className="bg-amber-50/80 border border-amber-200 text-amber-900 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-2 mb-3">
+          <span>⌨️</span>
+          <span>
+            Tu peux <strong>taper au clavier</strong> : seules les lettres de la réserve sont acceptées !
+            (Touche <em>Effacer</em> pour retirer la dernière lettre)
+          </span>
+        </div>
+
+        {/* Rejected character feedback notice */}
+        {rejectedNotice && (
+          <div className="mb-2 bg-rose-100 border border-rose-400 text-rose-800 text-xs sm:text-sm font-bold px-3 py-1 rounded-full flex items-center gap-1.5 animate-wiggle">
+            <AlertCircle className="w-4 h-4 text-rose-600" />
+            <span>{rejectedNotice}</span>
+          </div>
+        )}
+
+        {/* Target Letter Slots */}
+        <div className="w-full flex flex-col items-center my-3">
           <p className="text-xs sm:text-sm font-bold text-amber-900 mb-2">
-            Place les lettres dans les cases :
+            Cases à remplir (clique sur une lettre pour la retirer) :
           </p>
 
           <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 p-3 bg-amber-50/80 rounded-2xl border-2 border-amber-200 min-h-[4.5rem] items-center max-w-full">
@@ -318,7 +420,7 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         <div className="w-full flex flex-col items-center my-3">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs sm:text-sm font-bold text-slate-600">
-              Lettres disponibles :
+              Lettres proposées :
             </span>
             {currentLevelConfig.distractorCount > 0 && (
               <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
@@ -380,6 +482,22 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           >
             <RotateCcw className="w-6 h-6" />
           </button>
+
+          {/* Toggle Virtual Keyboard */}
+          <button
+            onClick={() => {
+              soundManager.playPop();
+              setShowKeyboard(!showKeyboard);
+            }}
+            title={showKeyboard ? "Cacher le clavier" : "Afficher le clavier virtuel"}
+            className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+              showKeyboard 
+                ? 'bg-amber-200 text-amber-900 border-amber-400' 
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+            }`}
+          >
+            <KeyboardIcon className="w-6 h-6" />
+          </button>
         </div>
 
         {/* Status messages */}
@@ -396,6 +514,16 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           </div>
         )}
       </div>
+
+      {/* On-screen virtual keyboard */}
+      {showKeyboard && (
+        <VirtualKeyboard
+          onKeyPress={handleKeyInput}
+          onBackspace={handleBackspace}
+          onSpace={() => {}}
+          uppercase={uppercase}
+        />
+      )}
     </div>
   );
 }
