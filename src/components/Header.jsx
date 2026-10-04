@@ -11,7 +11,9 @@ import {
   BookOpen, 
   Calculator, 
   Award,
-  ChevronDown
+  ChevronDown,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { PROFILES } from '../data/profiles';
 import { soundManager } from '../utils/audio';
@@ -65,6 +67,8 @@ export default function Header({
   setSoundEnabled,
   voiceEnabled,
   setVoiceEnabled,
+  isFullscreen,
+  toggleFullscreen,
   theme
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -177,6 +181,23 @@ export default function Header({
               )}
             </button>
 
+            {/* Mode Plein Écran */}
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Quitter le plein écran" : "Passer en plein écran"}
+              className={`p-1.5 rounded-xl border font-bold flex items-center text-xs cursor-pointer transition-all ${
+                isFullscreen
+                  ? 'bg-amber-100 text-amber-900 border-amber-400 shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+              }`}
+            >
+              {isFullscreen ? (
+                <Minimize className="w-4 h-4 text-amber-700" />
+              ) : (
+                <Maximize className="w-4 h-4 text-slate-700" />
+              )}
+            </button>
+
             {/* Menu Trigger Button */}
             <button
               onClick={() => {
@@ -276,12 +297,12 @@ export default function Header({
                 </div>
               ))}
 
-              {/* Sound & Speech Settings Section in Drawer */}
+              {/* Sound & Screen Settings Section in Drawer */}
               <div className="border-t border-slate-200 pt-3 mt-1 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold text-slate-500">
-                  Options sonores :
+                  Options & Affichage :
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={toggleSound}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
@@ -300,6 +321,16 @@ export default function Header({
                   >
                     {voiceEnabled ? <Volume1 className="w-4 h-4 text-sky-600" /> : <VolumeX className="w-4 h-4" />}
                     <span>Voix TTS</span>
+                  </button>
+
+                  <button
+                    onClick={toggleFullscreen}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${
+                      isFullscreen ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs' : 'bg-slate-100 text-slate-600 border-slate-300'
+                    }`}
+                  >
+                    {isFullscreen ? <Minimize className="w-4 h-4 text-amber-700" /> : <Maximize className="w-4 h-4 text-slate-600" />}
+                    <span>{isFullscreen ? 'Quitter Plein Écran' : 'Plein Écran'}</span>
                   </button>
                 </div>
               </div>

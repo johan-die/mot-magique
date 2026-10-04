@@ -63,12 +63,87 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [celebrationMilestone, setCelebrationMilestone] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const activeProfile = PROFILES[activeProfileId] || PROFILES.lilou;
   const currentTheme = activeProfile.theme;
   const currentStars = userStars[activeProfileId] || 0;
   const currentLevel = userLevels[activeProfileId] || 1;
   const currentStickers = userStickers[activeProfileId] || [];
+
+  // Désactiver le clic droit / menu contextuel sur toute l'application
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+    };
+  }, []);
+
+  // Détection du mode plein écran (standard et préfixes navigateurs)
+  useEffect(() => {
+    const checkFs = () => {
+      const isFs = Boolean(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      setIsFullscreen(isFs);
+    };
+
+    document.addEventListener('fullscreenchange', checkFs);
+    document.addEventListener('webkitfullscreenchange', checkFs);
+    document.addEventListener('mozfullscreenchange', checkFs);
+    document.addEventListener('MSFullscreenChange', checkFs);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', checkFs);
+      document.removeEventListener('webkitfullscreenchange', checkFs);
+      document.removeEventListener('mozfullscreenchange', checkFs);
+      document.removeEventListener('MSFullscreenChange', checkFs);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    soundManager.playPop();
+    const doc = document;
+    const docEl = document.documentElement;
+
+    const isCurrentFs = Boolean(
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement
+    );
+
+    if (!isCurrentFs) {
+      const requestFs = docEl.requestFullscreen ||
+        docEl.webkitRequestFullscreen ||
+        docEl.mozRequestFullScreen ||
+        docEl.msRequestFullscreen;
+
+      if (requestFs) {
+        requestFs.call(docEl).then(() => {
+          soundManager.speak("Plein écran activé !");
+        }).catch(() => {
+          // Sur certains navigateurs mobiles, le plein écran peut nécessiter une interaction tactile directe
+        });
+      }
+    } else {
+      const exitFs = doc.exitFullscreen ||
+        doc.webkitExitFullscreen ||
+        doc.mozCancelFullScreen ||
+        doc.msExitFullscreen;
+
+      if (exitFs) {
+        exitFs.call(doc).catch(() => {});
+      }
+    }
+  };
 
   // Save profile and data to localStorage
   useEffect(() => {
@@ -142,6 +217,8 @@ export default function App() {
         setSoundEnabled={setSoundEnabled}
         voiceEnabled={voiceEnabled}
         setVoiceEnabled={setVoiceEnabled}
+        isFullscreen={isFullscreen}
+        toggleFullscreen={toggleFullscreen}
         theme={currentTheme}
       />
 
