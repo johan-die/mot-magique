@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -8,7 +8,8 @@ import {
   RotateCcw, 
   Sparkles,
   Keyboard as KeyboardIcon,
-  AlertCircle
+  AlertCircle,
+  Dices
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
@@ -31,16 +32,16 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
-  // Filter words by difficulty level AND category
-  const filteredWords = WORDS.filter(w => {
-    const matchesLevel = w.level === difficultyLevel;
-    const matchesCat = selectedCategory === 'tous' || w.category === selectedCategory;
-    return matchesLevel && matchesCat;
-  });
-
-  const activeWords = filteredWords.length > 0 
-    ? filteredWords 
-    : WORDS.filter(w => w.level === difficultyLevel);
+  // Randomiser / Mélanger aléatoirement les mots pour ce niveau et cette catégorie
+  const activeWords = useMemo(() => {
+    const list = WORDS.filter(w => {
+      const matchesLevel = w.level === difficultyLevel;
+      const matchesCat = selectedCategory === 'tous' || w.category === selectedCategory;
+      return matchesLevel && matchesCat;
+    });
+    const pool = list.length > 0 ? list : WORDS.filter(w => w.level === difficultyLevel);
+    return shuffle(pool);
+  }, [difficultyLevel, selectedCategory]);
 
   const currentWordObj = activeWords[wordIndex % activeWords.length] || activeWords[0];
   const targetLetters = currentWordObj.word.split('');
@@ -183,6 +184,18 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
   const handleNextWord = useCallback(() => {
     soundManager.playPop();
     setWordIndex((prev) => (prev + 1) % activeWords.length);
+  }, [activeWords.length]);
+
+  const handleRandomWord = useCallback(() => {
+    soundManager.playPop();
+    if (activeWords.length <= 1) return;
+    setWordIndex((prev) => {
+      let next;
+      do {
+        next = Math.floor(Math.random() * activeWords.length);
+      } while (next === prev && activeWords.length > 1);
+      return next;
+    });
   }, [activeWords.length]);
 
   // Handle typing from physical or virtual keyboard: ONLY ACCEPTS PROPOSED LETTERS IN BANK!
@@ -337,9 +350,19 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           <span className="opacity-75">({targetLetters.length} lettres • {currentLevelConfig.distractorCount} pièges)</span>
         </div>
 
-        {/* Counter */}
-        <div className="absolute top-4 right-4 text-slate-500 text-xs sm:text-sm font-semibold">
-          Mot {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+        {/* Counter & Random button */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={handleRandomWord}
+            title="Tirer un mot au hasard 🎲"
+            className="flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-2 sm:px-2.5 py-1 rounded-xl border border-amber-300 cursor-pointer transition-all active:scale-95 shadow-xs"
+          >
+            <Dices className="w-4 h-4 text-amber-600" />
+            <span className="hidden sm:inline">Hasard</span>
+          </button>
+          <span className="text-slate-500 text-xs sm:text-sm font-bold">
+            {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+          </span>
         </div>
 
         {/* Image & Audio button */}

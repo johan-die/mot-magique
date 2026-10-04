@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { WORDS, WORD_CATEGORIES } from '../data/words';
 import { soundManager } from '../utils/audio';
-import { Sparkles, Trophy, Lock } from 'lucide-react';
+import { Sparkles, Trophy, Lock, Search } from 'lucide-react';
 
 export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, theme }) {
   const [selectedCategory, setSelectedCategory] = useState('tous');
-
-  const filteredWords = selectedCategory === 'tous'
-    ? WORDS
-    : WORDS.filter(w => w.category === selectedCategory);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [onlyUnlocked, setOnlyUnlocked] = useState(false);
 
   const totalUnlocked = unlockedStickerIds.length;
   const totalWords = WORDS.length;
   const progressPercent = Math.min(100, Math.round((totalUnlocked / totalWords) * 100));
+
+  const filteredWords = useMemo(() => {
+    return WORDS.filter(w => {
+      const matchCat = selectedCategory === 'tous' || w.category === selectedCategory;
+      const matchSearch = !searchQuery || w.word.toLowerCase().includes(searchQuery.toLowerCase());
+      const isUnlocked = unlockedStickerIds.includes(w.id);
+      const matchUnlocked = !onlyUnlocked || isUnlocked;
+      return matchCat && matchSearch && matchUnlocked;
+    });
+  }, [selectedCategory, searchQuery, onlyUnlocked, unlockedStickerIds]);
+
+  const categoryCount = (catId) => {
+    if (catId === 'tous') return WORDS.length;
+    return WORDS.filter(w => w.category === catId).length;
+  };
 
   const handleStickerClick = (wordObj, isUnlocked) => {
     soundManager.playPop();
@@ -37,7 +50,7 @@ export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, t
                 <Sparkles className="w-5 h-5 text-yellow-500" />
               </h2>
               <p className="text-xs text-slate-500 font-semibold">
-                Tous les mots réussis débloquent leurs autocollants magiques dorés !
+                Plus de 500 mots magnifiques à collectionner et débloquer !
               </p>
             </div>
           </div>
@@ -57,8 +70,36 @@ export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, t
           </div>
         </div>
 
-        {/* Category chips */}
-        <div className="flex flex-wrap justify-center gap-2 mb-5 w-full">
+        {/* Search & Only Unlocked Filter Bar */}
+        <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Rechercher un mot..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 font-semibold"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              soundManager.playPop();
+              setOnlyUnlocked(!onlyUnlocked);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+              onlyUnlocked
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-sm'
+                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+            }`}
+          >
+            {onlyUnlocked ? '⭐ Débloqués seulement' : 'Afficher tout l\'album'}
+          </button>
+        </div>
+
+        {/* Category chips with counts */}
+        <div className="flex flex-wrap justify-center gap-2 mb-4 w-full">
           {WORD_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -66,14 +107,19 @@ export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, t
                 soundManager.playPop();
                 setSelectedCategory(cat.id);
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
                 selectedCategory === cat.id
                   ? 'bg-amber-500 text-white shadow-md scale-105'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              <span className="mr-1">{cat.emoji}</span>
-              {cat.label}
+              <span>{cat.emoji}</span>
+              <span>{cat.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                selectedCategory === cat.id ? 'bg-amber-600 text-amber-100' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {categoryCount(cat.id)}
+              </span>
             </button>
           ))}
         </div>

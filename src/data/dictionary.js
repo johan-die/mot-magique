@@ -1,5 +1,6 @@
 // Dictionnaire français enrichi pour enfants (CP / CE1 / CE2)
 // Mots fréquents, noms, adjectifs, petits mots grammaticaux et verbes courants
+import { WORDS } from './words';
 
 export const COMMON_FRENCH_WORDS = new Set([
   // Petits mots outils (fondamentaux CP)
@@ -104,6 +105,18 @@ export const COMMON_FRENCH_WORDS = new Set([
   'voiture', 'voitures', 'auto', 'camion', 'camions', 'bus', 'train', 'trains',
   'avion', 'avions', 'hélicoptère', 'fusée', 'fusées', 'bateau', 'bateaux', 'navire', 'moto'
 ]);
+
+// Intégrer automatiquement tous les mots de la grande banque WORDS
+WORDS.forEach(w => {
+  if (w && w.word) {
+    const clean = w.word.toLowerCase().trim();
+    COMMON_FRENCH_WORDS.add(clean);
+    // Ajouter aussi sans tiret si mot composé
+    if (clean.includes('-')) {
+      clean.split('-').forEach(part => COMMON_FRENCH_WORDS.add(part));
+    }
+  }
+});
 
 // Remplacements phonétiques fréquents des enfants de CP/CE1
 const PHONETIC_MAP = {

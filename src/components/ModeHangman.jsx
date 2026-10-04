@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Volume2, ArrowRight, RotateCcw, Sparkles } from 'lucide-react';
+import { Volume2, ArrowRight, RotateCcw, Sparkles, Dices } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
 
@@ -19,9 +19,18 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
   };
   const maxMistakes = maxMistakesMap[difficultyLevel] || 6;
 
-  // Filter words by difficulty level
-  const filteredWords = WORDS.filter(w => w.level === difficultyLevel);
-  const activeWords = filteredWords.length > 0 ? filteredWords : WORDS;
+  // Randomiser / Mélanger les mots selon le niveau
+  const activeWords = useMemo(() => {
+    const list = WORDS.filter(w => w.level === difficultyLevel);
+    const pool = list.length > 0 ? list : WORDS;
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [difficultyLevel]);
+
   const currentWordObj = activeWords[wordIndex % activeWords.length];
   const targetWord = currentWordObj.word.toUpperCase();
 
@@ -108,6 +117,18 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
     setWordIndex(prev => (prev + 1) % activeWords.length);
   };
 
+  const handleRandomWord = () => {
+    soundManager.playPop();
+    if (activeWords.length <= 1) return;
+    setWordIndex(prev => {
+      let next;
+      do {
+        next = Math.floor(Math.random() * activeWords.length);
+      } while (next === prev && activeWords.length > 1);
+      return next;
+    });
+  };
+
   const remainingBalloons = Math.max(0, maxMistakes - mistakes);
 
   return (
@@ -131,9 +152,19 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
               </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-slate-500">
-            Mot {(wordIndex % activeWords.length) + 1} / {activeWords.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRandomWord}
+              title="Tirer un mot au hasard 🎲"
+              className="flex items-center gap-1 text-xs font-black text-purple-900 bg-purple-100 hover:bg-purple-200 px-2 sm:px-2.5 py-1 rounded-xl border border-purple-300 cursor-pointer transition-all active:scale-95 shadow-xs"
+            >
+              <Dices className="w-4 h-4 text-purple-600" />
+              <span className="hidden sm:inline">Hasard</span>
+            </button>
+            <span className="text-xs font-bold text-slate-500">
+              Mot {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+            </span>
+          </div>
         </div>
 
         {/* Mascot & Balloons Graphic */}

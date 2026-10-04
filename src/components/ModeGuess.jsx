@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -9,7 +9,7 @@ import {
   Keyboard as KeyboardIcon,
   Sparkles,
   Eye,
-  HelpCircle
+  Dices
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
@@ -27,17 +27,22 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
-  // Filter words by difficulty level AND category
-  const filteredWords = WORDS.filter(w => {
-    const matchesLevel = w.level === difficultyLevel;
-    const matchesCat = selectedCategory === 'tous' || w.category === selectedCategory;
-    return matchesLevel && matchesCat;
-  });
-
-  // Fallback to words of this level if category empty
-  const activeWords = filteredWords.length > 0 
-    ? filteredWords 
-    : WORDS.filter(w => w.level === difficultyLevel);
+  // Randomiser / Mélanger aléatoirement les mots selon le niveau et la catégorie
+  const activeWords = useMemo(() => {
+    const list = WORDS.filter(w => {
+      const matchesLevel = w.level === difficultyLevel;
+      const matchesCat = selectedCategory === 'tous' || w.category === selectedCategory;
+      return matchesLevel && matchesCat;
+    });
+    const pool = list.length > 0 ? list : WORDS.filter(w => w.level === difficultyLevel);
+    // Fisher-Yates shuffle
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [difficultyLevel, selectedCategory]);
 
   const currentWordObj = activeWords[wordIndex % activeWords.length] || activeWords[0];
   const targetWord = currentWordObj ? currentWordObj.word.toLowerCase() : '';
@@ -123,6 +128,18 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
     setWordIndex((prev) => (prev + 1) % activeWords.length);
   };
 
+  const handleRandomWord = () => {
+    soundManager.playPop();
+    if (activeWords.length <= 1) return;
+    setWordIndex((prev) => {
+      let next;
+      do {
+        next = Math.floor(Math.random() * activeWords.length);
+      } while (next === prev && activeWords.length > 1);
+      return next;
+    });
+  };
+
   const formatText = (txt) => {
     return uppercase ? txt.toUpperCase() : txt.toLowerCase();
   };
@@ -160,9 +177,19 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
           <span className="opacity-75">({currentWordObj.word.length} lettres)</span>
         </div>
 
-        {/* Counter */}
-        <div className="absolute top-4 right-4 text-slate-500 text-xs sm:text-sm font-semibold">
-          Mot {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+        {/* Counter & Random button */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={handleRandomWord}
+            title="Tirer un mot au hasard 🎲"
+            className="flex items-center gap-1 text-xs font-black text-sky-800 bg-sky-100 hover:bg-sky-200 px-2 sm:px-2.5 py-1 rounded-xl border border-sky-300 cursor-pointer transition-all active:scale-95 shadow-xs"
+          >
+            <Dices className="w-4 h-4 text-sky-600" />
+            <span className="hidden sm:inline">Hasard</span>
+          </button>
+          <span className="text-slate-500 text-xs sm:text-sm font-bold">
+            {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+          </span>
         </div>
 
         {/* Level 5 Dictation Banner */}

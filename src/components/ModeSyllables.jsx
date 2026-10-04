@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Dices } from 'lucide-react';
 import { SYLLABLE_WORDS } from '../data/syllables';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager } from '../utils/audio';
@@ -19,9 +19,13 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
-  // Filter words by difficulty level
-  const filteredWords = SYLLABLE_WORDS.filter(w => w.level === difficultyLevel);
-  const activeWords = filteredWords.length > 0 ? filteredWords : SYLLABLE_WORDS;
+  // Randomiser / Mélanger les mots selon le niveau
+  const activeWords = useMemo(() => {
+    const filteredWords = SYLLABLE_WORDS.filter(w => w.level === difficultyLevel);
+    const pool = filteredWords.length > 0 ? filteredWords : SYLLABLE_WORDS;
+    return shuffle(pool);
+  }, [difficultyLevel]);
+
   const currentItem = activeWords[index % activeWords.length];
 
   const [trainWagons, setTrainWagons] = useState([]);
@@ -129,6 +133,18 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
     setIndex(prev => (prev + 1) % activeWords.length);
   };
 
+  const handleRandomWord = () => {
+    soundManager.playPop();
+    if (activeWords.length <= 1) return;
+    setIndex((prev) => {
+      let next;
+      do {
+        next = Math.floor(Math.random() * activeWords.length);
+      } while (next === prev && activeWords.length > 1);
+      return next;
+    });
+  };
+
   const handleReset = () => {
     soundManager.playPop();
     setTrainWagons(new Array(currentItem.syllables.length).fill(null));
@@ -157,9 +173,19 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
               </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-slate-500">
-            Mot {(index % activeWords.length) + 1} / {activeWords.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRandomWord}
+              title="Tirer un mot au hasard 🎲"
+              className="flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-2 sm:px-2.5 py-1 rounded-xl border border-amber-300 cursor-pointer transition-all active:scale-95 shadow-xs"
+            >
+              <Dices className="w-4 h-4 text-amber-600" />
+              <span className="hidden sm:inline">Hasard</span>
+            </button>
+            <span className="text-xs font-bold text-slate-500">
+              Mot {(index % activeWords.length) + 1} / {activeWords.length}
+            </span>
+          </div>
         </div>
 
         {/* Word image + audio */}
