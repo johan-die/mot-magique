@@ -24,3 +24,12 @@ dist-ssr
 *.sw?
 __pycache__/
 *.py[cod]
+
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*credentials*
