@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -29,8 +29,26 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
   const [wordIndex, setWordIndex] = useState(0);
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [rejectedNotice, setRejectedNotice] = useState(null);
+  const mobileInputRef = useRef(null);
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
+
+  const handleToggleKeyboard = () => {
+    soundManager.playPop();
+    const willShow = !showKeyboard;
+    setShowKeyboard(willShow);
+    if (!willShow) {
+      setTimeout(() => {
+        if (mobileInputRef.current) {
+          mobileInputRef.current.focus();
+        }
+      }, 60);
+    } else {
+      if (mobileInputRef.current) {
+        mobileInputRef.current.blur();
+      }
+    }
+  };
 
   // Randomiser / Mélanger aléatoirement les mots pour ce niveau et cette catégorie
   const activeWords = useMemo(() => {
@@ -342,94 +360,128 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
       </div>
 
       {/* Main Scrabble Card */}
-      <div className="w-full bg-white rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-amber-300 flex flex-col items-center relative overflow-hidden">
-        {/* Level badge */}
-        <div className={`absolute top-4 left-4 ${currentLevelConfig.badgeBg} text-xs sm:text-sm font-extrabold px-3 py-1 rounded-full border flex items-center gap-1.5`}>
-          <span>{currentLevelConfig.emoji}</span>
-          <span>{currentLevelConfig.name}</span>
-          <span className="opacity-75">({targetLetters.length} lettres • {currentLevelConfig.distractorCount} pièges)</span>
+      <div className="w-full bg-white rounded-3xl p-3.5 sm:p-7 shadow-xl border-4 border-amber-300 flex flex-col items-center relative overflow-hidden">
+        {/* Responsive Header Row inside card */}
+        <div className="w-full flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100">
+          <div className={`${currentLevelConfig.badgeBg} text-xs font-extrabold px-2.5 py-1 rounded-full border flex items-center gap-1.5 shrink-0`}>
+            <span>{currentLevelConfig.emoji}</span>
+            <span>{currentLevelConfig.name}</span>
+            <span className="opacity-75 hidden min-[400px]:inline">({targetLetters.length} lettres • {currentLevelConfig.distractorCount} pièges)</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={handleRandomWord}
+              title="Tirer un mot au hasard 🎲"
+              className="flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded-xl border border-amber-300 cursor-pointer transition-all active:scale-95 shadow-xs"
+            >
+              <Dices className="w-3.5 h-3.5 text-amber-600" />
+              <span>Hasard</span>
+            </button>
+            <span className="text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1 rounded-xl border border-slate-200">
+              {(wordIndex % activeWords.length) + 1} / {activeWords.length}
+            </span>
+          </div>
         </div>
 
-        {/* Counter & Random button */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={handleRandomWord}
-            title="Tirer un mot au hasard 🎲"
-            className="flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 px-2 sm:px-2.5 py-1 rounded-xl border border-amber-300 cursor-pointer transition-all active:scale-95 shadow-xs"
-          >
-            <Dices className="w-4 h-4 text-amber-600" />
-            <span className="hidden sm:inline">Hasard</span>
-          </button>
-          <span className="text-slate-500 text-xs sm:text-sm font-bold">
-            {(wordIndex % activeWords.length) + 1} / {activeWords.length}
-          </span>
-        </div>
+        {/* Hidden input for native phone typing */}
+        <input
+          ref={mobileInputRef}
+          type="text"
+          inputMode={showKeyboard ? "none" : "text"}
+          value=""
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val) {
+              handleKeyInput(val.slice(-1));
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+              handleBackspace();
+            } else if (e.key === 'Enter') {
+              if (status === 'success') {
+                handleNextWord();
+              } else {
+                checkSolution();
+              }
+            }
+          }}
+          className="opacity-0 absolute -z-10 w-1 h-1 pointer-events-none"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
 
         {/* Image & Audio button */}
-        <div className="flex items-center gap-4 mt-7 mb-4">
+        <div className="flex items-center gap-3 my-2">
           <div 
-            className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl flex items-center justify-center text-6xl sm:text-7xl shadow-inner border-4 border-dashed border-amber-300"
+            className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center text-5xl sm:text-6xl shadow-inner border-4 border-dashed border-amber-300 shrink-0"
             style={{ backgroundColor: currentWordObj.color || '#fffbeb' }}
           >
             <span className="filter drop-shadow-sm select-none">{currentWordObj.emoji}</span>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <button
               onClick={() => {
                 soundManager.playPop();
                 soundManager.speak(currentWordObj.word);
               }}
-              className="btn-3d flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold px-4 py-2 rounded-2xl text-sm sm:text-base cursor-pointer shadow-md"
+              className="btn-3d flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl text-xs sm:text-sm cursor-pointer shadow-md"
             >
-              <Volume2 className="w-5 h-5 animate-pulse" />
+              <Volume2 className="w-4 h-4 animate-pulse" />
               <span>Écoute le mot</span>
             </button>
 
             <button
               onClick={handleMagicHint}
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-2 rounded-xl border border-amber-300 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 transition-all cursor-pointer"
             >
-              <Wand2 className="w-4 h-4 text-amber-600" />
+              <Wand2 className="w-3.5 h-3.5 text-amber-600" />
               <span>Baguette Magique (Aide)</span>
             </button>
           </div>
         </div>
 
-        {/* Keyboard Helper Banner */}
-        <div className="bg-amber-50/80 border border-amber-200 text-amber-900 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-2 mb-3">
-          <span>⌨️</span>
-          <span>
-            Tu peux <strong>taper au clavier</strong> : seules les lettres de la réserve sont acceptées !
-            (Touche <em>Effacer</em> pour retirer la dernière lettre)
+        {/* Keyboard mode toggle pill */}
+        <div className="w-full flex items-center justify-between px-1 mb-1 text-[11px] sm:text-xs text-slate-500">
+          <span className="font-semibold flex items-center gap-1">
+            {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone disponible"}
           </span>
+          <button
+            type="button"
+            onClick={handleToggleKeyboard}
+            className="font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+          >
+            {showKeyboard ? "Utiliser clavier téléphone 📱" : "Afficher clavier virtuel ⌨️"}
+          </button>
         </div>
 
         {/* Rejected character feedback notice */}
         {rejectedNotice && (
           <div className="mb-2 bg-rose-100 border border-rose-400 text-rose-800 text-xs sm:text-sm font-bold px-3 py-1 rounded-full flex items-center gap-1.5 animate-wiggle">
-            <AlertCircle className="w-4 h-4 text-rose-600" />
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{rejectedNotice}</span>
           </div>
         )}
 
         {/* Target Letter Slots */}
-        <div className="w-full flex flex-col items-center my-3">
-          <p className="text-xs sm:text-sm font-bold text-amber-900 mb-2">
+        <div className="w-full flex flex-col items-center my-2">
+          <p className="text-xs sm:text-sm font-bold text-amber-900 mb-1.5">
             Cases à remplir (clique sur une lettre pour la retirer) :
           </p>
 
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 p-3 bg-amber-50/80 rounded-2xl border-2 border-amber-200 min-h-[4.5rem] items-center max-w-full">
+          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2.5 p-2.5 sm:p-3 bg-amber-50/80 rounded-2xl border-2 border-amber-200 min-h-[4rem] items-center max-w-full">
             {slots.map((slot, idx) => {
               const isFilled = slot !== null;
               return (
                 <div
                   key={idx}
                   onClick={() => handleSlotClick(idx)}
-                  className={`w-10 h-13 sm:w-14 sm:h-18 rounded-2xl flex items-center justify-center text-xl sm:text-3xl font-black cursor-pointer transition-all ${
+                  className={`w-9 h-12 min-[380px]:w-11 min-[380px]:h-14 sm:w-14 sm:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center text-lg min-[380px]:text-xl sm:text-3xl font-black cursor-pointer transition-all ${
                     isFilled
-                      ? 'bg-amber-400 border-3 border-amber-500 text-amber-950 tile-shadow transform -translate-y-1 hover:scale-105'
-                      : 'bg-white/80 border-3 border-dashed border-amber-300 text-slate-300 shadow-inner hover:border-amber-400'
+                      ? 'bg-amber-400 border-2 sm:border-3 border-amber-500 text-amber-950 tile-shadow transform -translate-y-0.5 sm:-translate-y-1 hover:scale-105'
+                      : 'bg-white/80 border-2 sm:border-3 border-dashed border-amber-300 text-slate-300 shadow-inner hover:border-amber-400'
                   } ${status === 'retry' && isFilled ? 'border-rose-400 bg-rose-200 text-rose-950 animate-wiggle' : ''} ${status === 'success' ? 'border-emerald-500 bg-emerald-300 text-emerald-950 scale-105' : ''}`}
                 >
                   {isFilled ? formatChar(slot.char) : (idx + 1)}
@@ -440,25 +492,25 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         </div>
 
         {/* Letter Bank */}
-        <div className="w-full flex flex-col items-center my-3">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="w-full flex flex-col items-center my-2">
+          <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs sm:text-sm font-bold text-slate-600">
               Lettres proposées :
             </span>
             {currentLevelConfig.distractorCount > 0 && (
               <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                ⚠️ {currentLevelConfig.distractorCount} lettre(s) piège(s) !
+                ⚠️ {currentLevelConfig.distractorCount} piège(s) !
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 max-w-2xl">
+          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2.5 max-w-2xl">
             {bank.map((tile) => {
               if (tile.placed) {
                 return (
                   <div
                     key={tile.id}
-                    className="w-10 h-13 sm:w-14 sm:h-16 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 opacity-25 flex items-center justify-center text-lg sm:text-2xl font-bold text-slate-400"
+                    className="w-9 h-12 min-[380px]:w-11 min-[380px]:h-14 sm:w-14 sm:h-16 rounded-xl sm:rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 opacity-25 flex items-center justify-center text-base min-[380px]:text-lg sm:text-2xl font-bold text-slate-400"
                   >
                     {formatChar(tile.char)}
                   </div>
@@ -469,7 +521,7 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
                 <button
                   key={tile.id}
                   onClick={() => handleBankTileClick(tile)}
-                  className="w-10 h-13 sm:w-14 sm:h-16 rounded-2xl bg-amber-100 hover:bg-amber-200 active:bg-amber-300 border-2 sm:border-3 border-amber-400 text-amber-950 font-black text-xl sm:text-2xl tile-shadow transition-transform active:translate-y-1 cursor-pointer flex items-center justify-center"
+                  className="w-9 h-12 min-[380px]:w-11 min-[380px]:h-14 sm:w-14 sm:h-16 rounded-xl sm:rounded-2xl bg-amber-100 hover:bg-amber-200 active:bg-amber-300 border-2 sm:border-3 border-amber-400 text-amber-950 font-black text-lg min-[380px]:text-xl sm:text-2xl tile-shadow transition-transform active:translate-y-0.5 cursor-pointer flex items-center justify-center"
                 >
                   {formatChar(tile.char)}
                 </button>
@@ -479,47 +531,44 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         </div>
 
         {/* Verification & Controls */}
-        <div className="flex flex-wrap justify-center items-center gap-3 w-full mt-4">
+        <div className="flex items-center justify-center gap-2 w-full mt-3">
           {status !== 'success' ? (
             <button
               onClick={() => checkSolution()}
-              className="btn-3d flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-lg sm:text-xl py-3 px-6 rounded-2xl cursor-pointer shadow-lg"
+              className="btn-3d flex-1 max-w-[220px] sm:max-w-xs flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-base sm:text-xl py-2.5 sm:py-3.5 px-4 rounded-2xl cursor-pointer shadow-lg"
             >
-              <CheckCircle2 className="w-6 h-6" />
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
               <span>VÉRIFIER</span>
             </button>
           ) : (
             <button
               onClick={handleNextWord}
-              className="btn-3d flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold text-lg sm:text-xl py-3 px-6 rounded-2xl cursor-pointer shadow-lg animate-bounce-gentle"
+              className="btn-3d flex-1 max-w-[220px] sm:max-w-xs flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold text-base sm:text-xl py-2.5 sm:py-3.5 px-4 rounded-2xl cursor-pointer shadow-lg animate-bounce-gentle"
             >
               <span>MOT SUIVANT</span>
-              <ArrowRight className="w-6 h-6" />
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
             </button>
           )}
 
           <button
             onClick={handleReset}
             title="Recommencer"
-            className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl border border-slate-300 transition-all cursor-pointer"
+            className="p-2.5 sm:p-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl border border-slate-300 transition-all cursor-pointer shrink-0"
           >
-            <RotateCcw className="w-6 h-6" />
+            <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Toggle Virtual Keyboard */}
           <button
-            onClick={() => {
-              soundManager.playPop();
-              setShowKeyboard(!showKeyboard);
-            }}
-            title={showKeyboard ? "Cacher le clavier" : "Afficher le clavier virtuel"}
-            className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+            onClick={handleToggleKeyboard}
+            title={showKeyboard ? "Cacher le clavier virtuel" : "Afficher le clavier virtuel"}
+            className={`p-2.5 sm:p-3.5 rounded-2xl border transition-all cursor-pointer shrink-0 ${
               showKeyboard 
-                ? 'bg-amber-200 text-amber-900 border-amber-400' 
+                ? 'bg-amber-200 text-amber-900 border-amber-400 shadow-xs' 
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
             }`}
           >
-            <KeyboardIcon className="w-6 h-6" />
+            <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -49,6 +49,24 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
   const [text, setText] = useState('Le chat joue avec le ballon.');
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const textareaRef = useRef(null);
+
+  const handleToggleKeyboard = () => {
+    soundManager.playPop();
+    const willShow = !showKeyboard;
+    setShowKeyboard(willShow);
+    if (!willShow) {
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 60);
+    } else {
+      if (textareaRef.current) {
+        textareaRef.current.blur();
+      }
+    }
+  };
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
   const challenge = LEVEL_CHALLENGES[difficultyLevel] || LEVEL_CHALLENGES[1];
@@ -233,11 +251,11 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
       </div>
 
       {/* Notebook writing card */}
-      <div className="w-full bg-white rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-emerald-200 flex flex-col relative">
-        <div className="flex items-center justify-between mb-3 border-b-2 border-slate-100 pb-3">
+      <div className="w-full bg-white rounded-3xl p-3.5 sm:p-8 shadow-xl border-4 border-emerald-200 flex flex-col relative">
+        <div className="flex items-center justify-between mb-2 border-b-2 border-slate-100 pb-2 flex-wrap gap-1">
           <div className="flex items-center gap-2">
             <span className="text-2xl">📝</span>
-            <h2 className="text-lg sm:text-xl font-bold text-emerald-900">
+            <h2 className="text-base sm:text-xl font-bold text-emerald-900">
               L'Ardoise Magique
             </h2>
           </div>
@@ -246,41 +264,57 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
           </span>
         </div>
 
+        {/* Keyboard mode toggle pill */}
+        <div className="w-full flex items-center justify-between px-1 mb-1.5 text-[11px] sm:text-xs text-slate-500">
+          <span className="font-semibold flex items-center gap-1">
+            {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone actif"}
+          </span>
+          <button
+            type="button"
+            onClick={handleToggleKeyboard}
+            className="font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+          >
+            {showKeyboard ? "Passer au clavier téléphone 📱" : "Afficher le clavier virtuel ⌨️"}
+          </button>
+        </div>
+
         {/* Notebook Ruled Textarea */}
-        <div className="relative w-full rounded-2xl border-2 border-slate-300 bg-[linear-gradient(#f8fafc_1px,transparent_1px)] bg-[size:100%_2.5rem] p-4 shadow-inner">
+        <div className="relative w-full rounded-2xl border-2 border-slate-300 bg-[linear-gradient(#f8fafc_1px,transparent_1px)] bg-[size:100%_2.25rem] sm:bg-[size:100%_2.5rem] p-3 sm:p-4 shadow-inner">
           <textarea
+            ref={textareaRef}
+            inputMode={showKeyboard ? "none" : "text"}
             value={formatText(text)}
             onChange={(e) => {
               setText(e.target.value);
               setAnalysis(null);
             }}
             placeholder={formatText("Écris ce que tu veux ici...")}
-            rows={5}
-            className="w-full bg-transparent text-xl sm:text-2xl font-bold text-slate-800 leading-[2.5rem] resize-none focus:outline-none border-none tracking-wide"
+            rows={4}
+            className="w-full bg-transparent text-lg sm:text-2xl font-bold text-slate-800 leading-[2.25rem] sm:leading-[2.5rem] resize-none focus:outline-none border-none tracking-wide"
           />
         </div>
 
         {/* Action Buttons Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleSpeakFull}
-              className="btn-3d flex items-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold px-4 py-2.5 rounded-2xl text-sm sm:text-base cursor-pointer shadow-md"
+              className="btn-3d flex items-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-base cursor-pointer shadow-md"
             >
-              <Volume2 className="w-5 h-5 animate-pulse" />
+              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
               <span>Lire à voix haute</span>
             </button>
 
             <button
               onClick={handleVerify}
-              className="btn-3d flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold px-5 py-2.5 rounded-2xl text-sm sm:text-base cursor-pointer shadow-md"
+              className="btn-3d flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-base cursor-pointer shadow-md"
             >
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Vérifier mon texte</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
                 soundManager.playPop();
@@ -288,24 +322,21 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
                 setAnalysis(null);
               }}
               title="Effacer tout le texte"
-              className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl border border-slate-300 transition-all cursor-pointer"
+              className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl border border-slate-300 transition-all cursor-pointer shrink-0"
             >
-              <RotateCcw className="w-5 h-5" />
+              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             <button
-              onClick={() => {
-                soundManager.playPop();
-                setShowKeyboard(!showKeyboard);
-              }}
-              title={showKeyboard ? "Cacher le clavier" : "Afficher le clavier virtuel"}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+              onClick={handleToggleKeyboard}
+              title={showKeyboard ? "Cacher le clavier virtuel et utiliser le clavier du téléphone" : "Afficher le clavier virtuel"}
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
                 showKeyboard 
-                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs' 
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
               }`}
             >
-              <KeyboardIcon className="w-5 h-5" />
+              <KeyboardIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>

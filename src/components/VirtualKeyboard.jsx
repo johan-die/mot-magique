@@ -15,10 +15,10 @@ export default function VirtualKeyboard({ onKeyPress, onBackspace, onSpace, uppe
   };
 
   return (
-    <div className="bg-amber-100/90 border-2 border-amber-300 rounded-3xl p-3 sm:p-4 shadow-lg max-w-2xl mx-auto my-3">
-      <div className="flex flex-col gap-2">
+    <div className="w-full max-w-2xl mx-auto my-2 p-1.5 min-[380px]:p-2.5 sm:p-4 bg-amber-100/95 border-2 border-amber-300 rounded-2xl sm:rounded-3xl shadow-lg box-border">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
         {rows.map((row, rIdx) => (
-          <div key={rIdx} className="flex justify-center gap-1 sm:gap-2">
+          <div key={rIdx} className="flex justify-center gap-0.5 min-[360px]:gap-1 sm:gap-2 w-full">
             {row.map((char) => {
               const displayChar = uppercase ? char.toUpperCase() : char.toLowerCase();
               return (
@@ -26,7 +26,7 @@ export default function VirtualKeyboard({ onKeyPress, onBackspace, onSpace, uppe
                   key={char}
                   type="button"
                   onClick={() => handleKey(char)}
-                  className="w-8 h-10 sm:w-12 sm:h-12 bg-white hover:bg-amber-50 active:bg-amber-200 border-2 border-amber-400 text-amber-900 font-bold rounded-xl text-lg sm:text-xl shadow-[0_3px_0_#d97706] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center cursor-pointer select-none"
+                  className="flex-1 min-w-0 max-w-[38px] sm:max-w-[48px] h-9 min-[380px]:h-10 sm:h-12 bg-white hover:bg-amber-50 active:bg-amber-200 border sm:border-2 border-amber-400 text-amber-900 font-extrabold rounded-lg sm:rounded-xl text-sm min-[360px]:text-base sm:text-xl shadow-[0_2px_0_#d97706] sm:shadow-[0_3px_0_#d97706] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center cursor-pointer select-none px-0"
                 >
                   {displayChar}
                 </button>
@@ -36,16 +36,16 @@ export default function VirtualKeyboard({ onKeyPress, onBackspace, onSpace, uppe
         ))}
 
         {/* Bottom row: Space & Backspace */}
-        <div className="flex justify-center gap-3 mt-1">
+        <div className="flex justify-center gap-1.5 sm:gap-3 mt-0.5 sm:mt-1 w-full">
           <button
             type="button"
             onClick={() => {
               soundManager.playPop();
               onSpace();
             }}
-            className="flex-1 max-w-xs h-10 sm:h-12 bg-white hover:bg-amber-50 active:bg-amber-200 border-2 border-amber-400 text-amber-900 font-bold rounded-xl text-sm sm:text-base shadow-[0_3px_0_#d97706] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 max-w-[180px] sm:max-w-xs h-9 min-[380px]:h-10 sm:h-12 bg-white hover:bg-amber-50 active:bg-amber-200 border sm:border-2 border-amber-400 text-amber-900 font-bold rounded-lg sm:rounded-xl text-xs sm:text-base shadow-[0_2px_0_#d97706] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer px-2"
           >
-            <Space className="w-5 h-5 text-amber-600" />
+            <Space className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 shrink-0" />
             <span>ESPACE</span>
           </button>
 
@@ -55,9 +55,9 @@ export default function VirtualKeyboard({ onKeyPress, onBackspace, onSpace, uppe
               soundManager.playPop();
               onBackspace();
             }}
-            className="px-4 sm:px-6 h-10 sm:h-12 bg-rose-100 hover:bg-rose-200 border-2 border-rose-400 text-rose-800 font-bold rounded-xl text-sm sm:text-base shadow-[0_3px_0_#f43f5e] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-3 sm:px-6 h-9 min-[380px]:h-10 sm:h-12 bg-rose-100 hover:bg-rose-200 border sm:border-2 border-rose-400 text-rose-800 font-bold rounded-lg sm:rounded-xl text-xs sm:text-base shadow-[0_2px_0_#f43f5e] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
           >
-            <Delete className="w-5 h-5" />
+            <Delete className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             <span>EFFACER</span>
           </button>
         </div>
