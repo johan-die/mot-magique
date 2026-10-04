@@ -123,11 +123,9 @@ export default function Header({
                 <button
                   key={p.id}
                   onClick={() => handleProfileSwitch(p.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-black text-xs cursor-pointer transition-all ${
+                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl font-black text-xs cursor-pointer transition-all ${
                     isActive
-                      ? p.id === 'lilou'
-                        ? 'bg-gradient-to-r from-pink-400 to-rose-500 text-white shadow-xs scale-102'
-                        : 'bg-gradient-to-r from-sky-400 to-blue-600 text-white shadow-xs scale-102'
+                      ? `bg-gradient-to-r ${p.theme.primaryBtn} text-white shadow-xs scale-102`
                       : 'text-slate-600 hover:bg-slate-200'
                   }`}
                   title={`Profil de ${p.name}`}

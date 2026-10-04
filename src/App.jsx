@@ -21,40 +21,49 @@ export default function App() {
     return localStorage.getItem('mot_magique_active_profile') || 'lilou';
   });
 
-  // Separate stars for Lilou and Tiago
+  // Separate stars for Lilou, Tiago & Elyo
   const [userStars, setUserStars] = useState(() => {
     const saved = localStorage.getItem('mot_magique_user_stars');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return { lilou: 0, tiago: 0, elyo: 0, ...parsed };
       } catch (e) {}
     }
-    return { lilou: 0, tiago: 0 };
+    return { lilou: 0, tiago: 0, elyo: 0 };
   });
 
-  // Separate sticker collections for Lilou and Tiago
+  // Separate sticker collections for Lilou, Tiago & Elyo
   const [userStickers, setUserStickers] = useState(() => {
     const saved = localStorage.getItem('mot_magique_user_stickers');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          lilou: ['chat', 'pomme', 'etoile'],
+          tiago: ['lion', 'velo', 'fusee'],
+          elyo: ['chien', 'pain', 'lune'],
+          ...parsed
+        };
       } catch (e) {}
     }
     return {
       lilou: ['chat', 'pomme', 'etoile'],
-      tiago: ['lion', 'velo', 'fusee']
+      tiago: ['lion', 'velo', 'fusee'],
+      elyo: ['chien', 'pain', 'lune']
     };
   });
 
-  // Separate difficulty levels for Lilou and Tiago
+  // Separate difficulty levels for Lilou, Tiago & Elyo
   const [userLevels, setUserLevels] = useState(() => {
     const saved = localStorage.getItem('mot_magique_user_levels');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return { lilou: 1, tiago: 1, elyo: 1, ...parsed };
       } catch (e) {}
     }
-    return { lilou: 1, tiago: 1 };
+    return { lilou: 1, tiago: 1, elyo: 1 };
   });
 
   // Current Game Mode

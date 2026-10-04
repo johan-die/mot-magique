@@ -43,5 +43,26 @@ export const PROFILES = {
       accentColor: '#0284c7',
       decorations: ['🚀', '⚡', '⭐', '🦕', '⚽']
     }
+  },
+  elyo: {
+    id: 'elyo',
+    name: 'Elyo',
+    avatar: '🧒',
+    title: 'Petit Champion',
+    themeName: 'emeraude-nature',
+    // Thème interface émeraude / menthe (vert vif, turquoise doux, touches lumineuses)
+    theme: {
+      id: 'elyo',
+      bgGradient: 'from-emerald-50 via-teal-50 to-green-50',
+      headerBorder: 'border-emerald-300',
+      headerBg: 'bg-white/95',
+      primaryBtn: 'from-emerald-400 to-teal-600 hover:from-emerald-500 hover:to-teal-700',
+      primaryText: 'text-emerald-950',
+      primaryLight: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      cardBorder: 'border-emerald-200',
+      cardGlow: 'shadow-emerald-100',
+      accentColor: '#10b981',
+      decorations: ['🌱', '🌟', '🦁', '🛸', '🎯']
+    }
   }
 };
