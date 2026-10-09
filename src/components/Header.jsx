@@ -45,6 +45,15 @@ export const ALL_ACTIVITIES = [
     ]
   },
   {
+    category: 'english',
+    categoryName: '🇬🇧 Découverte de l\'Anglais',
+    badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+    headerGradient: 'from-indigo-500 to-purple-600',
+    games: [
+      { id: 'english', label: 'English Club', emoji: '🇬🇧', desc: 'Quiz écoute, images et premiers mots en anglais' }
+    ]
+  },
+  {
     category: 'album',
     categoryName: '🏆 Récompenses & Collection',
     badgeColor: 'bg-yellow-100 text-yellow-900 border-yellow-300',

@@ -1,8 +1,5 @@
 // Table de correspondance précalculée pour Microsoft Fluent Emoji
-// Générée automatiquement pour les 524 mots, niveaux, catégories et syllabes de Mot Magique.
-// Structure :
-// hex : code hexadécimal pour la version 3D WebP (@lobehub/fluent-emoji-3d)
-// anim : chemin relatif dans Tarikul-Islam-Anik/Animated-Fluent-Emojis
+// Générée automatiquement pour les mots français, anglais, niveaux et catégories.
 
 export const FLUENT_MAP = {
   "🐓": {
@@ -1368,5 +1365,113 @@ export const FLUENT_MAP = {
   "🌟": {
     "hex": "1f31f",
     "anim": "Emojis/Travel and places/Glowing Star.png"
+  },
+  "🐷": {
+    "hex": "1f437",
+    "anim": "Emojis/Animals/Pig Face.png"
+  },
+  "🔴": {
+    "hex": "1f534",
+    "anim": "Emojis/Symbols/Red Circle.png"
+  },
+  "1️⃣": {
+    "hex": "31-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit One.png"
+  },
+  "2️⃣": {
+    "hex": "32-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Two.png"
+  },
+  "6️⃣": {
+    "hex": "36-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Six.png"
+  },
+  "🔟": {
+    "hex": "1f51f",
+    "anim": "Emojis/Symbols/Keycap 10.png"
+  },
+  "🥚": {
+    "hex": "1f95a",
+    "anim": "Emojis/Food/Egg.png"
+  },
+  "👍": {
+    "hex": "1f44d",
+    "anim": "Emojis/Hand gestures/Thumbs Up.png"
+  },
+  "🔵": {
+    "hex": "1f535",
+    "anim": "Emojis/Symbols/Blue Circle.png"
+  },
+  "🩷": {
+    "hex": "1fa77",
+    "anim": "Emojis/Smilies/Pink Heart.png"
+  },
+  "4️⃣": {
+    "hex": "34-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Four.png"
+  },
+  "5️⃣": {
+    "hex": "35-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Five.png"
+  },
+  "9️⃣": {
+    "hex": "39-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Nine.png"
+  },
+  "🟢": {
+    "hex": "1f7e2",
+    "anim": "Emojis/Symbols/Green Circle.png"
+  },
+  "⚪": {
+    "hex": "26aa",
+    "anim": "Emojis/Symbols/White Circle.png"
+  },
+  "⚫": {
+    "hex": "26ab",
+    "anim": "Emojis/Symbols/Black Circle.png"
+  },
+  "3️⃣": {
+    "hex": "33-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Three.png"
+  },
+  "7️⃣": {
+    "hex": "37-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Seven.png"
+  },
+  "8️⃣": {
+    "hex": "38-fe0f-20e3",
+    "anim": "Emojis/Symbols/Keycap Digit Eight.png"
+  },
+  "👋": {
+    "hex": "1f44b",
+    "anim": "Emojis/Hand gestures/Waving Hand.png"
+  },
+  "🟡": {
+    "hex": "1f7e1",
+    "anim": "Emojis/Symbols/Yellow Circle.png"
+  },
+  "🟠": {
+    "hex": "1f7e0",
+    "anim": "Emojis/Symbols/Orange Circle.png"
+  },
+  "🟣": {
+    "hex": "1f7e3",
+    "anim": "Emojis/Symbols/Purple Circle.png"
+  },
+  "🙏": {
+    "hex": "1f64f",
+    "anim": "Emojis/Hand gestures/Folded Hands.png"
+  },
+  "🤝": {
+    "hex": "1f91d",
+    "anim": "Emojis/Hand gestures/Handshake.png"
+  },
+  "🎨": {
+    "hex": "1f3a8",
+    "anim": "Emojis/Activities/Artist Palette.png"
+  },
+  "🔢": {
+    "hex": "1f522",
+    "anim": "Emojis/Symbols/Input Numbers.png"
   }
 };

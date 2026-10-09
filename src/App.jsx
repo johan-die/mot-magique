@@ -10,6 +10,7 @@ import ModeMissingLetter from './components/ModeMissingLetter';
 import ModeHangman from './components/ModeHangman';
 import ModeSentenceBuilder from './components/ModeSentenceBuilder';
 import ModeMaths from './components/ModeMaths';
+import ModeEnglish from './components/ModeEnglish';
 import StickerAlbum from './components/StickerAlbum';
 import { PROFILES } from './data/profiles';
 import confetti from 'canvas-confetti';
@@ -329,7 +330,17 @@ export default function App() {
           />
         )}
 
-        {/* 10. Grand Imagier / Album d'Autocollants */}
+        {/* 10. English Club (Initiation Anglais CP / CE1) */}
+        {activeMode === 'english' && (
+          <ModeEnglish
+            uppercase={uppercase}
+            onAddStar={handleAddStar}
+            difficultyLevel={currentLevel}
+            theme={currentTheme}
+          />
+        )}
+
+        {/* 11. Grand Imagier / Album d'Autocollants */}
         {activeMode === 'album' && (
           <StickerAlbum
             unlockedStickerIds={currentStickers}

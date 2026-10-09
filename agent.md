@@ -76,3 +76,17 @@ Composant React autonome :
 
 * **Build de production** : `npm run build` exécuté avec succès (compilation Vite sans erreurs).
 * **Analyse statique** : `npm run lint` validé (0 erreurs).
+
+---
+
+## 6. Nouveau jeu : English Club (Initiation à l'anglais)
+
+* **Objectif pédagogique** : Apprentissage des premiers mots d'anglais au CP / CE1 / CE2 (animaux, couleurs, nombres, aliments, école, salutations) avec audio natif et correspondances visuelles.
+* **Composants et Fichiers** :
+  * [`src/data/englishWords.js`](file:///root/apps/mot-magique/src/data/englishWords.js) : Banque de vocabulaire classée en 5 niveaux de difficulté et 6 catégories thématiques, avec phonétique et traductions françaises.
+  * [`src/components/ModeEnglish.jsx`](file:///root/apps/mot-magique/src/components/ModeEnglish.jsx) : Mode de jeu interactif proposant deux sous-modes complémentaires :
+    1. **Écoute & Trouve (Quiz Audio)** : L'enfant entend la prononciation anglaise et sélectionne la bonne carte parmi 4 propositions illustrées par Fluent Emoji.
+    2. **Écris le mot (Spelling)** : L'enfant observe l'illustration et écrit le mot en anglais à l'aide des cases de lettres et du clavier virtuel.
+  * Synthèse vocale bilingue dans [`src/utils/audio.js`](file:///root/apps/mot-magique/src/utils/audio.js) : Prononciation anglaise native (`en-US` / `en-GB`) avec débit adapté aux enfants.
+  * Intégration dans [`Header.jsx`](file:///root/apps/mot-magique/src/components/Header.jsx) et [`App.jsx`](file:///root/apps/mot-magique/src/App.jsx).
+

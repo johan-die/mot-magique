@@ -255,7 +255,9 @@ class SoundManager {
     this.cancel();
     this.isCancelled = false;
 
-    const cleanedText = sanitizeFrenchSpeech(text);
+    const targetLang = options.lang || 'fr-FR';
+    const isEnglish = targetLang.startsWith('en');
+    const cleanedText = isEnglish ? text.trim() : sanitizeFrenchSpeech(text);
     if (!cleanedText) {
       if (options.onEnd) options.onEnd();
       return;
@@ -265,24 +267,25 @@ class SoundManager {
     // Conserver la référence pour éviter le bug de garbage collection de Chrome
     this.currentUtterance = utterance;
 
-    utterance.lang = options.lang || 'fr-FR';
+    utterance.lang = targetLang;
     // Slightly slowed down (0.85) for 6-7yo clarity, slightly higher pitch for friendly tone
-    utterance.rate = options.rate !== undefined ? options.rate : 0.85;
+    utterance.rate = options.rate !== undefined ? options.rate : (isEnglish ? 0.8 : 0.85);
     utterance.pitch = options.pitch !== undefined ? options.pitch : 1.1;
 
-    // Pick a natural French voice if available
+    // Pick a natural voice based on language
     const availableVoices = this.voices.length > 0 ? this.voices : (window.speechSynthesis.getVoices() || []);
-    const frVoices = availableVoices.filter(v => v.lang && v.lang.startsWith('fr'));
-    if (frVoices.length > 0) {
-      // Prefer Google français, Thomas, Amelie, Hortense or default French
-      const preferred = frVoices.find(v => 
+    const langPrefix = isEnglish ? 'en' : 'fr';
+    const langVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+    if (langVoices.length > 0) {
+      const preferred = langVoices.find(v => 
         v.name.includes('Google') || 
+        v.name.includes('Natural') ||
+        v.name.includes('Samantha') || 
+        v.name.includes('Daniel') ||
         v.name.includes('Thomas') || 
-        v.name.includes('Amélie') || 
-        v.name.includes('Hortense') ||
-        v.name.includes('Natural')
+        v.name.includes('Amélie')
       );
-      utterance.voice = preferred || frVoices[0];
+      utterance.voice = preferred || langVoices[0];
     }
 
     let ended = false;
