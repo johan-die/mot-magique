@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, Dices } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLevel = 1 }) {
   const [wordIndex, setWordIndex] = useState(0);
@@ -97,7 +97,7 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
           spread: 80,
           origin: { y: 0.6 }
         });
-        soundManager.speak(`Bravo ! Tu as sauvé la mascotte avec le mot : ${currentWordObj.word} ! +${currentLevelConfig.starsReward} étoiles !`);
+        soundManager.speak(`Bravo ! Tu as sauvé la mascotte avec le mot : ${currentWordObj.word} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
       }
     } else {
       soundManager.playTryAgain();
@@ -270,7 +270,7 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
         {(isWon || isLost) && (
           <div className="mt-4 flex flex-col items-center gap-2 animate-pop">
             <span className={`text-base sm:text-lg font-black ${isWon ? 'text-emerald-700' : 'text-slate-700'}`}>
-              {isWon ? `🏆 Mascotte sauvée ! +${currentLevelConfig.starsReward} Étoiles ! ⭐` : `Le mot secret était : ${currentWordObj.word.toUpperCase()}`}
+              {isWon ? `🏆 Mascotte sauvée ! ${formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐` : `Le mot secret était : ${currentWordObj.word.toUpperCase()}`}
             </span>
 
             <button

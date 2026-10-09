@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Dices } from 'lucide-react';
 import { SYLLABLE_WORDS } from '../data/syllables';
 import { DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 function shuffle(array) {
   const arr = [...array];
@@ -119,8 +119,8 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
         origin: { y: 0.6 }
       });
 
-      const syllableSpoken = currentItem.syllables.join(' ... ');
-      soundManager.speak(`Tchou-tchou ! ${syllableSpoken} : ${currentItem.word} ! +${currentLevelConfig.starsReward} étoiles !`);
+      const syllableSpoken = currentItem.syllables.join(', ');
+      soundManager.speak(`Tchou-tchou ! ${syllableSpoken} : ${currentItem.word} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
     } else {
       setStatus('retry');
       soundManager.playTryAgain();
@@ -327,7 +327,7 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
         {status === 'success' && (
           <div className="mt-3 flex items-center gap-2 text-emerald-700 font-extrabold text-base sm:text-lg animate-pop">
             <Sparkles className="w-5 h-5 text-yellow-500" />
-            <span>Tchou tchou ! Le train est parti ! +{currentLevelConfig.starsReward} ⭐ !</span>
+            <span>Tchou tchou ! Le train est parti ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐</span>
           </div>
         )}
       </div>

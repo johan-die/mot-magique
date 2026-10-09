@@ -12,7 +12,7 @@ import {
   Dices
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
 
 function shuffle(array) {
@@ -70,8 +70,16 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
   const [bank, setBank] = useState([]);
   const [status, setStatus] = useState('idle');
 
+  // Cancel audio when unmounting
+  useEffect(() => {
+    return () => {
+      soundManager.cancel();
+    };
+  }, []);
+
   // Initialize slots and scrambled bank when word or difficulty changes
   useEffect(() => {
+    soundManager.cancel();
     const wordChars = currentWordObj.word.split('');
     const newSlots = new Array(wordChars.length).fill(null);
     setSlots(newSlots);
@@ -187,10 +195,17 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         origin: { y: 0.65 }
       });
 
-      soundManager.spellWord(currentWordObj.word);
-      setTimeout(() => {
-        soundManager.speak(`Bravo ! C'est bien : ${currentWordObj.word} ! +${currentLevelConfig.starsReward} étoiles !`);
-      }, 1800);
+      const starsRewardSpeech = getStarRewardSpeech(currentLevelConfig.starsReward);
+      const celebrationSpeech = `Bravo ! C'est bien : ${currentWordObj.word} ! ${starsRewardSpeech}`;
+
+      // Épelle le mot en entier. Dès que l'épellation se termine proprement, prononce la félicitation !
+      soundManager.spellWord(currentWordObj.word, {
+        onEnd: () => {
+          setTimeout(() => {
+            soundManager.speak(celebrationSpeech);
+          }, 250);
+        }
+      });
     } else {
       // RETRY
       setStatus('retry');
@@ -200,11 +215,13 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
   }, [slots, currentWordObj, difficultyLevel, currentLevelConfig, onAddStar]);
 
   const handleNextWord = useCallback(() => {
+    soundManager.cancel();
     soundManager.playPop();
     setWordIndex((prev) => (prev + 1) % activeWords.length);
   }, [activeWords.length]);
 
   const handleRandomWord = useCallback(() => {
+    soundManager.cancel();
     soundManager.playPop();
     if (activeWords.length <= 1) return;
     setWordIndex((prev) => {
@@ -576,7 +593,7 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
         {status === 'success' && (
           <div className="mt-4 flex items-center gap-2 text-emerald-700 font-extrabold text-lg sm:text-xl animate-pop">
             <Sparkles className="w-6 h-6 text-yellow-500" />
-            <span>Bravo ! +{currentLevelConfig.starsReward} Étoiles gagnées !</span>
+            <span>Bravo ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} !</span>
           </div>
         )}
 

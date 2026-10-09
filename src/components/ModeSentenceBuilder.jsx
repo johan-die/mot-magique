@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react';
 import { SENTENCES_DATA } from '../data/sentences';
 import { DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 function shuffle(array) {
   const arr = [...array];
@@ -112,7 +112,7 @@ export default function ModeSentenceBuilder({ onAddStar, theme, difficultyLevel 
         origin: { y: 0.6 }
       });
 
-      soundManager.speak(`Superbe ! Écoute la phrase complète : ${expected} ! +${currentLevelConfig.starsReward} étoiles !`);
+      soundManager.speak(`Superbe ! Écoute la phrase complète : ${expected} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
     } else {
       setStatus('retry');
       soundManager.playTryAgain();
@@ -276,7 +276,7 @@ export default function ModeSentenceBuilder({ onAddStar, theme, difficultyLevel 
         {status === 'success' && (
           <div className="mt-3 flex items-center gap-2 text-emerald-700 font-extrabold text-sm sm:text-base animate-pop">
             <Sparkles className="w-5 h-5 text-yellow-500" />
-            <span>Bravo ! Phrase complète ! +{currentLevelConfig.starsReward} ⭐ !</span>
+            <span>Bravo ! Phrase complète ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐</span>
           </div>
         )}
       </div>

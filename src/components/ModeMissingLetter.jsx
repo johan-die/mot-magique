@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Dices } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 function shuffle(array) {
   const arr = [...array];
@@ -78,7 +78,7 @@ export default function ModeMissingLetter({ uppercase, onAddStar, theme, difficu
         origin: { y: 0.6 }
       });
 
-      soundManager.speak(`Bravo ! C'était bien la lettre ${correctChar} pour ${currentWordObj.word} ! +${currentLevelConfig.starsReward} étoiles !`);
+      soundManager.speak(`Bravo ! C'était bien la lettre ${correctChar} pour ${currentWordObj.word} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
     } else {
       setStatus('retry');
       soundManager.playTryAgain();
@@ -224,7 +224,7 @@ export default function ModeMissingLetter({ uppercase, onAddStar, theme, difficu
               <ArrowRight className="w-5 h-5" />
             </button>
             <span className="text-emerald-700 font-bold text-xs sm:text-sm">
-              Bravo ! +{currentLevelConfig.starsReward} Étoiles gagnées ! ⭐
+              Bravo ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐
             </span>
           </div>
         )}

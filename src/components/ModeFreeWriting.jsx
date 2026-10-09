@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { checkWord, cleanWord } from '../data/dictionary';
 import { DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
 
 const LEVEL_CHALLENGES = {
@@ -130,7 +130,7 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
         spread: 70,
         origin: { y: 0.6 }
       });
-      soundManager.speak(`Incroyable ! Tu as réussi la ${challenge.title} ! +${currentLevelConfig.starsReward + 2} étoiles !`);
+      soundManager.speak(`Incroyable ! Tu as réussi la ${challenge.title.toLowerCase()} ! ${getStarRewardSpeech(currentLevelConfig.starsReward + 2)}`);
     } else if (res.validCount > 0 && res.mistakeCount === 0) {
       soundManager.playSuccess();
       onAddStar(currentLevelConfig.starsReward);
@@ -359,7 +359,7 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
             {analysis.isChallengeMet && (
               <div className="bg-amber-100 border-2 border-amber-400 text-amber-950 p-2.5 rounded-xl font-black text-sm flex items-center gap-2 animate-bounce-gentle">
                 <Trophy className="w-6 h-6 text-amber-600 shrink-0" />
-                <span>🏆 Félicitations ! Tu as accompli la {challenge.title} ! Bonus +{currentLevelConfig.starsReward + 2} ⭐ !</span>
+                <span>🏆 Félicitations ! Tu as accompli la {challenge.title.toLowerCase()} ! Bonus {formatStarsRewardBadge(currentLevelConfig.starsReward + 2)} ! ⭐</span>
               </div>
             )}
 

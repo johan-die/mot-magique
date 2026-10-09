@@ -12,7 +12,7 @@ import {
   Dices
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
 
 export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 }) {
@@ -130,7 +130,7 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
         origin: { y: 0.65 }
       });
 
-      soundManager.speak(`Bravo ! C'est bien : ${currentWordObj.word} ! +${currentLevelConfig.starsReward} étoiles !`, {
+      soundManager.speak(`Bravo ! C'est bien : ${currentWordObj.word} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`, {
         rate: 0.85
       });
     } else {
@@ -393,7 +393,7 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
           {status === 'success' && (
             <div className="mt-3 flex items-center gap-2 text-emerald-700 font-extrabold text-lg sm:text-xl animate-pop">
               <Sparkles className="w-6 h-6 text-yellow-500" />
-              <span>Bravo ! +{currentLevelConfig.starsReward} Étoiles gagnées !</span>
+              <span>Bravo ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} !</span>
             </div>
           )}
 

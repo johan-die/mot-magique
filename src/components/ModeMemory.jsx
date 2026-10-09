@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 function shuffle(array) {
   const arr = [...array];
@@ -106,7 +106,7 @@ export default function ModeMemory({ uppercase, onAddStar, theme, difficultyLeve
             origin: { y: 0.6 }
           });
           setTimeout(() => {
-            soundManager.speak(`Bravo ! Toutes les paires trouvées ! +${currentLevelConfig.starsReward} étoiles !`);
+            soundManager.speak(`Bravo ! Toutes les paires trouvées ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
           }, 400);
         }
       } else {
@@ -206,7 +206,7 @@ export default function ModeMemory({ uppercase, onAddStar, theme, difficultyLeve
           <div className="mt-5 flex flex-col items-center gap-2 animate-pop">
             <div className="flex items-center gap-2 text-emerald-700 font-black text-base sm:text-lg">
               <Trophy className="w-6 h-6 text-yellow-500" />
-              <span>Gagné ! {pairsCount} paires en {moves} coups ! +{currentLevelConfig.starsReward} ⭐</span>
+              <span>Gagné ! {pairsCount} paires en {moves} coups ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐</span>
             </div>
 
             <button

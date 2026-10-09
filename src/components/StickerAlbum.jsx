@@ -33,7 +33,7 @@ export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, t
       soundManager.playStar();
       soundManager.speak(wordObj.word);
     } else {
-      soundManager.speak("Cet autocollant est encore mystère ! Réussis le mot pour le débloquer !");
+      soundManager.speak("Cet autocollant est encore un mystère ! Réussis le mot pour le débloquer !");
     }
   };
 

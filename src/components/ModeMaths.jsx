@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Flame, Award } from 'lucide-react';
 import { MATH_TOPICS, generateExercise } from '../utils/mathGenerator';
 import { DIFFICULTY_LEVELS } from '../data/words';
-import { soundManager } from '../utils/audio';
+import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 
 export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
   const [topicId, setTopicId] = useState('mixed');
@@ -53,7 +53,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
         origin: { y: 0.6 }
       });
 
-      soundManager.speak(`Bravo ! C'est la bonne réponse : ${ans} ! +${currentLevelConfig.starsReward} étoiles !`);
+      soundManager.speak(`Bravo ! C'est la bonne réponse : ${ans} ! ${getStarRewardSpeech(currentLevelConfig.starsReward)}`);
     } else {
       setStatus('retry');
       soundManager.playTryAgain();
@@ -72,6 +72,8 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
     soundManager.playPop();
     if (currentEx.story) {
       soundManager.speak(currentEx.story);
+    } else if (currentEx.type === 'count') {
+      soundManager.speak("Combien y a-t-il d'objets ?");
     } else if (currentEx.question) {
       soundManager.speak(currentEx.question);
     } else {
@@ -344,7 +346,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
               <ArrowRight className="w-5 h-5" />
             </button>
             <span className="text-emerald-700 font-bold text-xs sm:text-sm">
-              Super calcul ! +{currentLevelConfig.starsReward} Étoiles gagnées ! ⭐
+              Super calcul ! {formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐
             </span>
           </div>
         )}
