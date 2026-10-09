@@ -4,6 +4,7 @@ import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Dices } from 'l
 import { SYLLABLE_WORDS } from '../data/syllables';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 function shuffle(array) {
   const arr = [...array];
@@ -194,7 +195,11 @@ export default function ModeSyllables({ uppercase, onAddStar, theme, difficultyL
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl flex items-center justify-center text-5xl sm:text-7xl shadow-inner border-4 border-dashed border-amber-300"
             style={{ backgroundColor: currentItem.color }}
           >
-            <span className="filter drop-shadow-sm select-none">{currentItem.emoji}</span>
+            <FluentEmoji
+              emoji={currentItem.emoji}
+              alt={currentItem.word}
+              className="w-16 h-16 sm:w-22 sm:h-22 filter drop-shadow-sm select-none"
+            />
           </div>
 
           <div className="flex flex-col gap-2">

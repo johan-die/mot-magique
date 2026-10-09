@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Dices } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 function shuffle(array) {
   const arr = [...array];
@@ -149,7 +150,11 @@ export default function ModeMissingLetter({ uppercase, onAddStar, theme, difficu
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl shadow-inner border-4 border-dashed border-amber-300"
             style={{ backgroundColor: currentWordObj.color || '#fff' }}
           >
-            <span className="filter drop-shadow-sm select-none">{currentWordObj.emoji}</span>
+            <FluentEmoji
+              emoji={currentWordObj.emoji}
+              alt={currentWordObj.word}
+              className="w-16 h-16 sm:w-22 sm:h-22 filter drop-shadow-sm select-none"
+            />
           </div>
 
           <button

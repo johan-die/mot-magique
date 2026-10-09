@@ -16,6 +16,7 @@ import { checkWord, cleanWord } from '../data/dictionary';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
+import { FluentEmoji } from './FluentEmoji';
 
 const LEVEL_CHALLENGES = {
   1: {
@@ -243,7 +244,7 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
               onClick={() => handleInsertWord(item.label)}
               className="px-2.5 py-1 bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-950 font-semibold rounded-xl text-xs sm:text-sm shadow-xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
-              <span>{item.emoji}</span>
+              <FluentEmoji emoji={item.emoji} alt={item.label} className="w-5 h-5 shrink-0" />
               <span>{formatText(item.label)}</span>
             </button>
           ))}

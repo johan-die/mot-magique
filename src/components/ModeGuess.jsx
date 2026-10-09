@@ -14,6 +14,7 @@ import {
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
+import { FluentEmoji } from './FluentEmoji';
 
 export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 }) {
   const [selectedCategory, setSelectedCategory] = useState('tous');
@@ -227,9 +228,11 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
           style={{ backgroundColor: currentWordObj.color || '#f0f9ff' }}
         >
           {imageRevealed ? (
-            <span className="filter drop-shadow-md select-none animate-pop">
-              {currentWordObj.emoji}
-            </span>
+            <FluentEmoji
+              emoji={currentWordObj.emoji}
+              alt={currentWordObj.word}
+              className="w-20 h-20 min-[380px]:w-24 min-[380px]:h-24 sm:w-28 sm:h-28 filter drop-shadow-md select-none animate-pop"
+            />
           ) : (
             <div className="flex flex-col items-center justify-center">
               <span className="text-4xl sm:text-6xl animate-bounce-gentle">❓</span>

@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 function shuffle(array) {
   const arr = [...array];
@@ -183,9 +184,11 @@ export default function ModeMemory({ uppercase, onAddStar, theme, difficultyLeve
               >
                 {showFace ? (
                   card.type === 'image' ? (
-                    <span className="text-4xl sm:text-5xl filter drop-shadow-sm animate-pop">
-                      {card.content}
-                    </span>
+                    <FluentEmoji
+                      emoji={card.content}
+                      alt={card.label}
+                      className="w-12 h-12 sm:w-16 sm:h-16 filter drop-shadow-sm animate-pop"
+                    />
                   ) : (
                     <span className="text-sm sm:text-lg font-black text-slate-800 break-words animate-pop px-1">
                       {card.content}

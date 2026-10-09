@@ -14,6 +14,7 @@ import {
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
 import VirtualKeyboard from './VirtualKeyboard';
+import { FluentEmoji } from './FluentEmoji';
 
 function shuffle(array) {
   const arr = [...array];
@@ -435,7 +436,11 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
             className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center text-5xl sm:text-6xl shadow-inner border-4 border-dashed border-amber-300 shrink-0"
             style={{ backgroundColor: currentWordObj.color || '#fffbeb' }}
           >
-            <span className="filter drop-shadow-sm select-none">{currentWordObj.emoji}</span>
+            <FluentEmoji
+              emoji={currentWordObj.emoji}
+              alt={currentWordObj.word}
+              className="w-14 h-14 sm:w-20 sm:h-20 filter drop-shadow-sm select-none"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

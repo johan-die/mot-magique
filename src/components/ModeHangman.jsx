@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Volume2, ArrowRight, RotateCcw, Sparkles, Dices } from 'lucide-react';
 import { WORDS, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLevel = 1 }) {
   const [wordIndex, setWordIndex] = useState(0);
@@ -269,6 +270,11 @@ export default function ModeHangman({ uppercase, onAddStar, theme, difficultyLev
         {/* Win / Loss Screen */}
         {(isWon || isLost) && (
           <div className="mt-4 flex flex-col items-center gap-2 animate-pop">
+            <FluentEmoji
+              emoji={currentWordObj.emoji}
+              alt={currentWordObj.word}
+              className="w-16 h-16 sm:w-20 sm:h-20 my-1 filter drop-shadow-md animate-pop"
+            />
             <span className={`text-base sm:text-lg font-black ${isWon ? 'text-emerald-700' : 'text-slate-700'}`}>
               {isWon ? `🏆 Mascotte sauvée ! ${formatStarsRewardBadge(currentLevelConfig.starsReward)} ! ⭐` : `Le mot secret était : ${currentWordObj.word.toUpperCase()}`}
             </span>

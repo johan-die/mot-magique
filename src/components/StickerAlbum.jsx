@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { WORDS, WORD_CATEGORIES } from '../data/words';
 import { soundManager } from '../utils/audio';
 import { Sparkles, Trophy, Lock, Search } from 'lucide-react';
+import { FluentEmoji } from './FluentEmoji';
 
 export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, theme }) {
   const [selectedCategory, setSelectedCategory] = useState('tous');
@@ -141,9 +142,11 @@ export default function StickerAlbum({ unlockedStickerIds = [], activeProfile, t
               >
                 {isUnlocked ? (
                   <>
-                    <span className="text-4xl sm:text-5xl filter drop-shadow-sm animate-pop">
-                      {item.emoji}
-                    </span>
+                    <FluentEmoji
+                      emoji={item.emoji}
+                      alt={item.word}
+                      className="w-12 h-12 sm:w-14 sm:h-14 filter drop-shadow-sm animate-pop"
+                    />
                     <span className="text-xs sm:text-sm font-black text-amber-950 mt-2 uppercase tracking-wide">
                       {item.word}
                     </span>

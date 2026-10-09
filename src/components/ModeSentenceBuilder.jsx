@@ -4,6 +4,7 @@ import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-r
 import { SENTENCES_DATA } from '../data/sentences';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 function shuffle(array) {
   const arr = [...array];
@@ -173,7 +174,10 @@ export default function ModeSentenceBuilder({ onAddStar, theme, difficultyLevel 
           className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl shadow-inner border-3 border-dashed border-amber-300 my-1"
           style={{ backgroundColor: currentSentenceObj.color }}
         >
-          <span className="filter drop-shadow-sm select-none">{currentSentenceObj.emoji}</span>
+          <FluentEmoji
+            emoji={currentSentenceObj.emoji}
+            className="w-14 h-14 sm:w-16 sm:h-16 filter drop-shadow-sm select-none"
+          />
         </div>
 
         {/* Listen button */}

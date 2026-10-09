@@ -4,6 +4,7 @@ import { Volume2, ArrowRight, RotateCcw, Sparkles, CheckCircle2, Flame, Award } 
 import { MATH_TOPICS, generateExercise } from '../utils/mathGenerator';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { FluentEmoji } from './FluentEmoji';
 
 export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
   const [topicId, setTopicId] = useState('mixed');
@@ -294,7 +295,7 @@ export default function ModeMaths({ onAddStar, theme, difficultyLevel = 1 }) {
         {currentEx.type === 'problem' && (
           <div className="flex flex-col items-center my-3">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-6 shadow-inner max-w-lg text-center">
-              <span className="text-3xl mb-2 block">{currentEx.emoji}</span>
+              <FluentEmoji emoji={currentEx.emoji} className="w-12 h-12 mx-auto mb-2 select-none" />
               <p className="text-sm sm:text-base font-bold text-slate-800 leading-relaxed mb-2">
                 {currentEx.story}
               </p>
