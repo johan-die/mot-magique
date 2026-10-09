@@ -308,9 +308,9 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
         </div>
 
         {/* Input Zone */}
-        <div className="w-full max-w-md flex flex-col items-center gap-2">
+        <div className="w-full max-w-2xl flex flex-col items-center gap-2">
           {/* Keyboard mode toggle pill */}
-          <div className="w-full flex items-center justify-between px-1 text-[11px] sm:text-xs text-slate-500">
+          <div className="w-full max-w-md flex items-center justify-between px-1 text-[11px] sm:text-xs text-slate-500">
             <span className="font-semibold flex items-center gap-1">
               {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone actif"}
             </span>
@@ -336,7 +336,7 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
               if (e.key === 'Enter') handleValidate();
             }}
             placeholder={formatText("Écris ici...")}
-            className={`w-full text-center text-xl sm:text-3xl font-black py-2.5 sm:py-3.5 px-3 rounded-2xl border-3 sm:border-4 tracking-widest focus:outline-none transition-all shadow-inner ${
+            className={`w-full max-w-md text-center text-xl sm:text-3xl font-black py-2.5 sm:py-3.5 px-3 rounded-2xl border-3 sm:border-4 tracking-widest focus:outline-none transition-all shadow-inner ${
               status === 'success'
                 ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
                 : status === 'retry'
@@ -345,8 +345,27 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
             }`}
           />
 
+          {/* On-screen virtual keyboard: situated between text zone and valider button */}
+          {showKeyboard && (
+            <VirtualKeyboard
+              onKeyPress={(char) => {
+                setUserInput(prev => prev + char);
+                if (status !== 'idle') setStatus('idle');
+              }}
+              onBackspace={() => {
+                setUserInput(prev => prev.slice(0, -1));
+                if (status !== 'idle') setStatus('idle');
+              }}
+              onSpace={() => {
+                setUserInput(prev => prev + ' ');
+                if (status !== 'idle') setStatus('idle');
+              }}
+              uppercase={uppercase}
+            />
+          )}
+
           {/* Validation & Next Buttons (responsive row with no horizontal overflow) */}
-          <div className="flex items-center justify-center gap-2 w-full mt-1">
+          <div className="flex items-center justify-center gap-2 w-full max-w-md mt-1">
             {status !== 'success' ? (
               <button
                 onClick={handleValidate}
@@ -407,16 +426,6 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
           )}
         </div>
       </div>
-
-      {/* On-screen virtual keyboard */}
-      {showKeyboard && (
-        <VirtualKeyboard
-          onKeyPress={(char) => setUserInput(prev => prev + char)}
-          onBackspace={() => setUserInput(prev => prev.slice(0, -1))}
-          onSpace={() => setUserInput(prev => prev + ' ')}
-          uppercase={uppercase}
-        />
-      )}
     </div>
   );
 }

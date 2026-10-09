@@ -429,7 +429,7 @@ export default function ModeEnglish({ uppercase, onAddStar, theme, difficultyLev
 
             {/* Clavier virtuel pour l'écriture */}
             {showKeyboard && status !== 'success' && (
-              <div className="w-full max-w-md my-2">
+              <div className="w-full max-w-2xl my-2">
                 <VirtualKeyboard
                   onKeyPress={handleKeyPress}
                   onDelete={handleDelete}

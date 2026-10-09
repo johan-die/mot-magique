@@ -48,7 +48,7 @@ const LEVEL_CHALLENGES = {
 
 export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel = 1 }) {
   const [text, setText] = useState('Le chat joue avec le ballon.');
-  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(true);
   const [analysis, setAnalysis] = useState(null);
   const textareaRef = useRef(null);
 
@@ -295,6 +295,25 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
           />
         </div>
 
+        {/* Clavier virtuel situé directement entre la zone de texte et le bouton valider */}
+        {showKeyboard && (
+          <VirtualKeyboard
+            onKeyPress={(char) => {
+              setText(prev => prev + char);
+              setAnalysis(null);
+            }}
+            onBackspace={() => {
+              setText(prev => prev.slice(0, -1));
+              setAnalysis(null);
+            }}
+            onSpace={() => {
+              setText(prev => prev + ' ');
+              setAnalysis(null);
+            }}
+            uppercase={uppercase}
+          />
+        )}
+
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -423,15 +442,6 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
           </div>
         )}
       </div>
-
-      {showKeyboard && (
-        <VirtualKeyboard
-          onKeyPress={(char) => setText(prev => prev + char)}
-          onBackspace={() => setText(prev => prev.slice(0, -1))}
-          onSpace={() => setText(prev => prev + ' ')}
-          uppercase={uppercase}
-        />
-      )}
     </div>
   );
 }

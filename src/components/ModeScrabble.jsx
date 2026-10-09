@@ -552,6 +552,17 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           </div>
         </div>
 
+        {/* Clavier virtuel situé directement entre la zone de lettres et le bouton vérifier */}
+        {showKeyboard && (
+          <div className="w-full max-w-2xl my-1">
+            <VirtualKeyboard
+              onKeyPress={handleKeyInput}
+              onBackspace={handleBackspace}
+              uppercase={uppercase}
+            />
+          </div>
+        )}
+
         {/* Verification & Controls */}
         <div className="flex items-center justify-center gap-2 w-full mt-3">
           {status !== 'success' ? (
@@ -608,16 +619,6 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           </div>
         )}
       </div>
-
-      {/* On-screen virtual keyboard */}
-      {showKeyboard && (
-        <VirtualKeyboard
-          onKeyPress={handleKeyInput}
-          onBackspace={handleBackspace}
-          onSpace={() => {}}
-          uppercase={uppercase}
-        />
-      )}
     </div>
   );
 }
