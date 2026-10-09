@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { useIsMobileOrTablet } from '../utils/device';
 import VirtualKeyboard from './VirtualKeyboard';
 import { FluentEmoji } from './FluentEmoji';
 
 export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 }) {
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [wordIndex, setWordIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
@@ -25,6 +27,13 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [imageRevealed, setImageRevealed] = useState(false);
   const inputRef = useRef(null);
+
+  // Sur mobile et tablette, le clavier virtuel est toujours actif par défaut
+  useEffect(() => {
+    if (isMobileOrTablet) {
+      setShowKeyboard(true);
+    }
+  }, [isMobileOrTablet]);
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
@@ -309,19 +318,21 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
 
         {/* Input Zone */}
         <div className="w-full max-w-2xl flex flex-col items-center gap-2">
-          {/* Keyboard mode toggle pill */}
-          <div className="w-full max-w-md flex items-center justify-between px-1 text-[11px] sm:text-xs text-slate-500">
-            <span className="font-semibold flex items-center gap-1">
-              {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone actif"}
-            </span>
-            <button
-              type="button"
-              onClick={handleToggleKeyboard}
-              className="font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
-            >
-              {showKeyboard ? "Utiliser clavier téléphone 📱" : "Afficher clavier virtuel ⌨️"}
-            </button>
-          </div>
+          {/* Keyboard mode toggle pill (hidden on mobile and tablet: virtual keyboard is active by default) */}
+          {!isMobileOrTablet && (
+            <div className="hidden lg:flex w-full max-w-md items-center justify-between px-1 text-xs text-slate-500">
+              <span className="font-semibold flex items-center gap-1">
+                {showKeyboard ? "⌨️ Clavier virtuel actif" : "💻 Clavier physique actif"}
+              </span>
+              <button
+                type="button"
+                onClick={handleToggleKeyboard}
+                className="font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+              >
+                {showKeyboard ? "Utiliser clavier physique 💻" : "Afficher clavier virtuel ⌨️"}
+              </button>
+            </div>
+          )}
 
           <input
             ref={inputRef}
@@ -397,18 +408,20 @@ export default function ModeGuess({ uppercase, onAddStar, difficultyLevel = 1 })
               <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            {/* Keyboard toggle */}
-            <button
-              onClick={handleToggleKeyboard}
-              title={showKeyboard ? "Désactiver le clavier virtuel et utiliser le clavier du téléphone" : "Afficher le clavier virtuel"}
-              className={`p-2.5 sm:p-3.5 rounded-2xl border transition-all cursor-pointer shrink-0 ${
-                showKeyboard 
-                  ? 'bg-sky-100 text-sky-700 border-sky-300 shadow-xs' 
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
-              }`}
-            >
-              <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
+            {/* Keyboard toggle (hidden on mobile and tablet) */}
+            {!isMobileOrTablet && (
+              <button
+                onClick={handleToggleKeyboard}
+                title={showKeyboard ? "Masquer le clavier virtuel (utiliser le clavier physique)" : "Afficher le clavier virtuel"}
+                className={`hidden lg:flex p-2.5 sm:p-3.5 rounded-2xl border transition-all cursor-pointer shrink-0 ${
+                  showKeyboard 
+                    ? 'bg-sky-100 text-sky-700 border-sky-300 shadow-xs' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                }`}
+              >
+                <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
           </div>
 
           {/* Feedback messages */}

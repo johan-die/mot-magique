@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { WORDS, WORD_CATEGORIES, DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { useIsMobileOrTablet } from '../utils/device';
 import VirtualKeyboard from './VirtualKeyboard';
 import { FluentEmoji } from './FluentEmoji';
 
@@ -26,11 +27,19 @@ function shuffle(array) {
 }
 
 export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1 }) {
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [wordIndex, setWordIndex] = useState(0);
-  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(true);
   const [rejectedNotice, setRejectedNotice] = useState(null);
   const mobileInputRef = useRef(null);
+
+  // Sur mobile et tablette, le clavier virtuel est toujours actif par défaut
+  useEffect(() => {
+    if (isMobileOrTablet) {
+      setShowKeyboard(true);
+    }
+  }, [isMobileOrTablet]);
 
   const currentLevelConfig = DIFFICULTY_LEVELS.find(l => l.id === difficultyLevel) || DIFFICULTY_LEVELS[0];
 
@@ -465,19 +474,21 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
           </div>
         </div>
 
-        {/* Keyboard mode toggle pill */}
-        <div className="w-full flex items-center justify-between px-1 mb-1 text-[11px] sm:text-xs text-slate-500">
-          <span className="font-semibold flex items-center gap-1">
-            {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone disponible"}
-          </span>
-          <button
-            type="button"
-            onClick={handleToggleKeyboard}
-            className="font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
-          >
-            {showKeyboard ? "Utiliser clavier téléphone 📱" : "Afficher clavier virtuel ⌨️"}
-          </button>
-        </div>
+        {/* Keyboard mode toggle pill (hidden on mobile and tablet: virtual keyboard is active by default) */}
+        {!isMobileOrTablet && (
+          <div className="hidden lg:flex w-full items-center justify-between px-1 mb-1 text-xs text-slate-500">
+            <span className="font-semibold flex items-center gap-1">
+              {showKeyboard ? "⌨️ Clavier virtuel actif" : "💻 Clavier physique actif"}
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleKeyboard}
+              className="font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+            >
+              {showKeyboard ? "Utiliser clavier physique 💻" : "Afficher clavier virtuel ⌨️"}
+            </button>
+          </div>
+        )}
 
         {/* Rejected character feedback notice */}
         {rejectedNotice && (
@@ -591,18 +602,20 @@ export default function ModeScrabble({ uppercase, onAddStar, difficultyLevel = 1
             <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
-          {/* Toggle Virtual Keyboard */}
-          <button
-            onClick={handleToggleKeyboard}
-            title={showKeyboard ? "Cacher le clavier virtuel" : "Afficher le clavier virtuel"}
-            className={`p-2.5 sm:p-3.5 rounded-2xl border transition-all cursor-pointer shrink-0 ${
-              showKeyboard 
-                ? 'bg-amber-200 text-amber-900 border-amber-400 shadow-xs' 
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
-            }`}
-          >
-            <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
+          {/* Toggle Virtual Keyboard (hidden on mobile and tablet) */}
+          {!isMobileOrTablet && (
+            <button
+              onClick={handleToggleKeyboard}
+              title={showKeyboard ? "Cacher le clavier virtuel (utiliser le clavier physique)" : "Afficher le clavier virtuel"}
+              className={`hidden lg:flex p-2.5 sm:p-3.5 rounded-2xl border transition-all cursor-pointer shrink-0 ${
+                showKeyboard 
+                  ? 'bg-amber-200 text-amber-900 border-amber-400 shadow-xs' 
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+              }`}
+            >
+              <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          )}
         </div>
 
         {/* Status messages */}

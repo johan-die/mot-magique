@@ -15,6 +15,7 @@ import {
 import { checkWord, cleanWord } from '../data/dictionary';
 import { DIFFICULTY_LEVELS } from '../data/words';
 import { soundManager, getStarRewardSpeech, formatStarsRewardBadge } from '../utils/audio';
+import { useIsMobileOrTablet } from '../utils/device';
 import VirtualKeyboard from './VirtualKeyboard';
 import { FluentEmoji } from './FluentEmoji';
 
@@ -47,10 +48,18 @@ const LEVEL_CHALLENGES = {
 };
 
 export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel = 1 }) {
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [text, setText] = useState('Le chat joue avec le ballon.');
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [analysis, setAnalysis] = useState(null);
   const textareaRef = useRef(null);
+
+  // Sur mobile et tablette, le clavier virtuel est toujours actif par défaut
+  useEffect(() => {
+    if (isMobileOrTablet) {
+      setShowKeyboard(true);
+    }
+  }, [isMobileOrTablet]);
 
   const handleToggleKeyboard = () => {
     soundManager.playPop();
@@ -265,19 +274,21 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
           </span>
         </div>
 
-        {/* Keyboard mode toggle pill */}
-        <div className="w-full flex items-center justify-between px-1 mb-1.5 text-[11px] sm:text-xs text-slate-500">
-          <span className="font-semibold flex items-center gap-1">
-            {showKeyboard ? "⌨️ Clavier virtuel actif" : "📱 Clavier téléphone actif"}
-          </span>
-          <button
-            type="button"
-            onClick={handleToggleKeyboard}
-            className="font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-          >
-            {showKeyboard ? "Passer au clavier téléphone 📱" : "Afficher le clavier virtuel ⌨️"}
-          </button>
-        </div>
+        {/* Keyboard mode toggle pill (hidden on mobile and tablet: virtual keyboard is active by default) */}
+        {!isMobileOrTablet && (
+          <div className="hidden lg:flex w-full items-center justify-between px-1 mb-1.5 text-xs text-slate-500">
+            <span className="font-semibold flex items-center gap-1">
+              {showKeyboard ? "⌨️ Clavier virtuel actif" : "💻 Clavier physique actif"}
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleKeyboard}
+              className="font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+            >
+              {showKeyboard ? "Passer au clavier physique 💻" : "Afficher le clavier virtuel ⌨️"}
+            </button>
+          </div>
+        )}
 
         {/* Notebook Ruled Textarea */}
         <div className="relative w-full rounded-2xl border-2 border-slate-300 bg-[linear-gradient(#f8fafc_1px,transparent_1px)] bg-[size:100%_2.25rem] sm:bg-[size:100%_2.5rem] p-3 sm:p-4 shadow-inner">
@@ -347,17 +358,20 @@ export default function ModeFreeWriting({ uppercase, onAddStar, difficultyLevel 
               <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <button
-              onClick={handleToggleKeyboard}
-              title={showKeyboard ? "Cacher le clavier virtuel et utiliser le clavier du téléphone" : "Afficher le clavier virtuel"}
-              className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
-                showKeyboard 
-                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs' 
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
-              }`}
-            >
-              <KeyboardIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+            {/* Keyboard toggle (hidden on mobile and tablet) */}
+            {!isMobileOrTablet && (
+              <button
+                onClick={handleToggleKeyboard}
+                title={showKeyboard ? "Cacher le clavier virtuel (utiliser le clavier physique)" : "Afficher le clavier virtuel"}
+                className={`hidden lg:flex p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                  showKeyboard 
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                }`}
+              >
+                <KeyboardIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
           </div>
         </div>
 
